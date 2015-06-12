@@ -1,6 +1,6 @@
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:name="com.luismedinaweb.spotifystreamer.MainActivityFragment"
+    android:name="com.luismedinaweb.spotifystreamer.TopTracksActivityFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:layout="@layout/fragment_main" />
+    tools:layout="@layout/fragment_top_tracks" />
