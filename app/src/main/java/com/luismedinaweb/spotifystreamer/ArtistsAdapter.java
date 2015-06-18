@@ -44,6 +44,8 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
                 url = null;
             }
         }
+
+        Picasso.with(getContext()).setIndicatorsEnabled(true);
         Picasso.with(getContext()).load(url)
                 .error(R.drawable.error)
                 .placeholder(R.drawable.placeholder)

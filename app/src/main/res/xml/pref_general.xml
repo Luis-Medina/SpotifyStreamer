@@ -7,6 +7,6 @@
     <ListPreference
         android:key="@string/pref_country_key"
         android:title="@string/pref_country_label"
-        android:defaultValue="@string/pref_country_default" />
+         />
 
 </PreferenceScreen>

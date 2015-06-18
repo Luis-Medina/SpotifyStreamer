@@ -36,6 +36,8 @@ public class MainActivityFragment extends Fragment {
     public static final String ARTIST_NAME_TAG = "artistName";
     public static final String ARTIST_ID_TAG = "artistID";
     private static final String LOG_TAG = MainActivityFragment.class.getSimpleName();
+    private static final String SAVED_ARTIST_TAG = "savedArtist";
+    private static final String SAVED_ARTIST_LIST_TAG = "savedArtistList";
     private ArtistsAdapter mArtistsAdapter;
     private SpotifyApi api;
     private SpotifyService spotify;
@@ -45,16 +47,43 @@ public class MainActivityFragment extends Fragment {
     }
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+    }
+
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        //thisFragment = this;
+        return inflater.inflate(R.layout.fragment_main, container, false);
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+    }
+
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
         api = new SpotifyApi();
         spotify = api.getService();
-
+        EditText editText = (EditText) getActivity().findViewById(R.id.artist_search_textview);
+        ListView mArtistsListView = (ListView) getActivity().findViewById(R.id.artist_listview);
         mArtistsAdapter = new ArtistsAdapter(getActivity(), new ArrayList<Artist>());
 
-        ListView mArtistsListView = (ListView) rootView.findViewById(R.id.artist_listview);
+        if(savedInstanceState != null){
+            ArrayList<ParcelableArtist> artists = savedInstanceState.getParcelableArrayList(SAVED_ARTIST_LIST_TAG);
+            if(artists != null){
+                for(ParcelableArtist artist : artists){
+                    mArtistsAdapter.add(artist.getSpotifyArtist());
+                }
+            }
+        }
+
+
         mArtistsListView.setAdapter(mArtistsAdapter);
         mArtistsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -67,13 +96,11 @@ public class MainActivityFragment extends Fragment {
             }
         });
 
-        EditText editText = (EditText) rootView.findViewById(R.id.artist_search_textview);
         editText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 boolean handled = false;
-                if (actionId == EditorInfo.IME_ACTION_SEARCH || event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-                        || actionId == EditorInfo.IME_ACTION_DONE) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH || event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
 
                     String artistToSearch = v.getText().toString();
 
@@ -88,8 +115,20 @@ public class MainActivityFragment extends Fragment {
                 return handled;
             }
         });
+    }
 
-        return rootView;
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        EditText editText = (EditText) getActivity().findViewById(R.id.artist_search_textview);
+        outState.putString(SAVED_ARTIST_TAG, editText.getText().toString());
+        if(mArtistsAdapter != null){
+            ArrayList<ParcelableArtist> artistList = new ArrayList<>();
+            for(int i=0; i<mArtistsAdapter.getCount(); i++){
+                artistList.add(new ParcelableArtist(mArtistsAdapter.getItem(i)));
+            }
+            outState.putParcelableArrayList(SAVED_ARTIST_LIST_TAG, artistList);
+        }
+        super.onSaveInstanceState(outState);
     }
 
 

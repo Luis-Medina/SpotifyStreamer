@@ -31,16 +31,23 @@ public class SettingsActivity extends PreferenceActivity
         // For all preferences, attach an OnPreferenceChangeListener so the UI summary can be
         // updated when the preference changes.
         // TODO: Add preferences
-        ListPreference country = (ListPreference) findPreference(getString(R.string.pref_country_key));
+        ListPreference countryPreference = (ListPreference) findPreference(getString(R.string.pref_country_key));
         TreeMap<String, String> countryMap = new TreeMap<>();
         for (String countryCode : Locale.getISOCountries()) {
             countryMap.put(new Locale("", countryCode).getDisplayCountry(), countryCode);
         }
         String[] countryCodes = new String[countryMap.size()];
         String[] countryNames = new String[countryMap.size()];
-        country.setEntries(countryMap.keySet().toArray(countryNames));
-        country.setEntryValues(countryMap.values().toArray(countryCodes));
-        bindPreferenceSummaryToValue(country);
+        countryPreference.setEntries(countryMap.keySet().toArray(countryNames));
+        countryPreference.setEntryValues(countryMap.values().toArray(countryCodes));
+
+        if(countryPreference.getValue() == null){
+            countryPreference.setValue(Locale.getDefault().getCountry().equals("")
+                    ? getString(R.string.pref_country_default)
+                    : Locale.getDefault().getCountry());
+        }
+
+        bindPreferenceSummaryToValue(countryPreference);
     }
 
     /**

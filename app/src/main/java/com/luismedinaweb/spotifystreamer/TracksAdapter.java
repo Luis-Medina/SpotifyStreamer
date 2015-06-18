@@ -19,7 +19,6 @@ import kaaes.spotify.webapi.android.models.Track;
  */
 public class TracksAdapter extends ArrayAdapter<Track> {
 
-
     public TracksAdapter(Context context, ArrayList<Track> artists) {
         super(context, 0, artists);
     }
@@ -47,6 +46,7 @@ public class TracksAdapter extends ArrayAdapter<Track> {
                 url = null;
             }
         }
+
         Picasso.with(getContext()).load(url)
                 .error(R.drawable.error)
                 .placeholder(R.drawable.placeholder)

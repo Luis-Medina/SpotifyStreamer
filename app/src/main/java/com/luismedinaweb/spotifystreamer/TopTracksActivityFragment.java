@@ -29,12 +29,13 @@ import retrofit.client.Response;
  */
 public class TopTracksActivityFragment extends Fragment {
 
+    //private static final String SAVED_ARTIST_ID_TAG = "savedArtistID";
+    private static final String SAVED_TRACK_LIST_TAG = "savedTrackList";
     private static final String LOG_TAG = TopTracksActivityFragment.class.getSimpleName();
     private TracksAdapter mTracksAdapter;
     private SpotifyApi api;
     private SpotifyService spotify;
     private String artistID;
-    private ArrayList<Track> trackList = new ArrayList<>();
 
     public TopTracksActivityFragment() {
     }
@@ -42,24 +43,49 @@ public class TopTracksActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_top_tracks, container, false);
+        return inflater.inflate(R.layout.fragment_top_tracks, container, false);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
         artistID = getActivity().getIntent().getStringExtra(MainActivityFragment.ARTIST_ID_TAG);
+
+        ListView mTracksListView = (ListView) getActivity().findViewById(R.id.track_listview);
+        mTracksAdapter = new TracksAdapter(getActivity(), new ArrayList<Track>());
 
         api = new SpotifyApi();
         spotify = api.getService();
 
-        mTracksAdapter = new TracksAdapter(getActivity(), new ArrayList<Track>());
+        if(savedInstanceState != null){
+            ArrayList<ParcelableTrack> parcelableTracks = savedInstanceState.getParcelableArrayList(SAVED_TRACK_LIST_TAG);
+            if(parcelableTracks != null){
+                for(ParcelableTrack parcelableTrack : parcelableTracks){
+                    mTracksAdapter.add(parcelableTrack.getSpotifyTrack());
+                }
+            }
+        }else{
+            if(artistID != null){
+                new SpotifyTopTracksSearchTask().execute(artistID);
+            }
+        }
 
-        ListView mTracksListView = (ListView) rootView.findViewById(R.id.track_listview);
         mTracksListView.setAdapter(mTracksAdapter);
 
-        return rootView;
+        super.onActivityCreated(savedInstanceState);
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        new SpotifyTopTracksSearchTask().execute(artistID);
+    public void onSaveInstanceState(Bundle outState) {
+        //outState.putString(SAVED_ARTIST_ID_TAG, artistID);
+        if(mTracksAdapter != null){
+            ArrayList<ParcelableTrack> parcelableTracks = new ArrayList<>();
+            for(int i=0; i<mTracksAdapter.getCount(); i++){
+                parcelableTracks.add(new ParcelableTrack(mTracksAdapter.getItem(i)));
+            }
+            outState.putParcelableArrayList(SAVED_TRACK_LIST_TAG, parcelableTracks);
+        }
+
+        super.onSaveInstanceState(outState);
     }
 
     public class SpotifyTopTracksSearchTask extends AsyncTask<String, Void, Tracks> implements Callback<Tracks> {
@@ -95,11 +121,9 @@ public class TopTracksActivityFragment extends Fragment {
                 @Override
                 public void run() {
                     mTracksAdapter.clear();
-                    trackList.clear();
                     if(tracks.tracks.size() > 0){
                         for(Track track : tracks.tracks){
                             mTracksAdapter.add(track);
-                            trackList.add(track);
                         }
                     }else{
                         Toast.makeText(getActivity(), "No results found!", Toast.LENGTH_LONG).show();
