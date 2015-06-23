@@ -2,13 +2,13 @@ package com.luismedinaweb.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
 public class TopTracksActivity extends ActionBarActivity {
-
 
 
     @Override
@@ -20,7 +20,6 @@ public class TopTracksActivity extends ActionBarActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setSubtitle(getIntent().getStringExtra(MainActivityFragment.ARTIST_NAME_TAG));
         }
-
     }
 
 
@@ -44,7 +43,7 @@ public class TopTracksActivity extends ActionBarActivity {
             return true;
         }
         if(id == android.R.id.home){
-            onBackPressed();
+            NavUtils.navigateUpFromSameTask(this);
             return true;
         }
 

@@ -29,7 +29,7 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
     public View getView(int position, View convertView, ViewGroup parent) {
         Artist artist = getItem(position);
 
-        if(convertView == null){
+        if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
         }
 
@@ -37,19 +37,17 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
         artistTextView.setText(artist.name);
         ImageView imageView = (ImageView) convertView.findViewById(R.id.artist_imageview);
 
-        String url = null;
-        if(artist.images.size() > 0){
+        String url;
+        if (artist.images.size() > 0) {
             url = artist.images.get(0).url;
-            if(url.isEmpty()){
-                url = null;
+            if (url != null && !url.isEmpty()) {
+                Picasso.with(getContext()).load(url)
+                        .error(R.drawable.error)
+                        .placeholder(R.drawable.placeholder)
+                        .into(imageView);
             }
         }
 
-        Picasso.with(getContext()).setIndicatorsEnabled(true);
-        Picasso.with(getContext()).load(url)
-                .error(R.drawable.error)
-                .placeholder(R.drawable.placeholder)
-                .into(imageView);
 
         return convertView;
 

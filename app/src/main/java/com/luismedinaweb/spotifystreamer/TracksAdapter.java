@@ -28,7 +28,7 @@ public class TracksAdapter extends ArrayAdapter<Track> {
     public View getView(int position, View convertView, ViewGroup parent) {
         Track track = getItem(position);
 
-        if(convertView == null){
+        if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_track, parent, false);
         }
 
@@ -39,18 +39,16 @@ public class TracksAdapter extends ArrayAdapter<Track> {
 
         ImageView imageView = (ImageView) convertView.findViewById(R.id.track_imageview);
 
-        String url = null;
-        if(track.album.images.size() > 0){
+        String url;
+        if (track.album.images.size() > 0) {
             url = track.album.images.get(0).url;
-            if(url.isEmpty()){
-                url = null;
+            if (url != null && !url.isEmpty()) {
+                Picasso.with(getContext()).load(url)
+                        .error(R.drawable.error)
+                        .placeholder(R.drawable.placeholder)
+                        .into(imageView);
             }
         }
-
-        Picasso.with(getContext()).load(url)
-                .error(R.drawable.error)
-                .placeholder(R.drawable.placeholder)
-                .into(imageView);
 
         return convertView;
 

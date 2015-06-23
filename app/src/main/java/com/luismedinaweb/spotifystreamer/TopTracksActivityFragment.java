@@ -1,6 +1,6 @@
 package com.luismedinaweb.spotifystreamer;
 
-import android.os.AsyncTask;
+import android.app.Activity;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
@@ -29,13 +29,13 @@ import retrofit.client.Response;
  */
 public class TopTracksActivityFragment extends Fragment {
 
-    //private static final String SAVED_ARTIST_ID_TAG = "savedArtistID";
     private static final String SAVED_TRACK_LIST_TAG = "savedTrackList";
     private static final String LOG_TAG = TopTracksActivityFragment.class.getSimpleName();
     private TracksAdapter mTracksAdapter;
     private SpotifyApi api;
     private SpotifyService spotify;
     private String artistID;
+    private final String COUNTRY_KEY = "country";
 
     public TopTracksActivityFragment() {
     }
@@ -56,16 +56,60 @@ public class TopTracksActivityFragment extends Fragment {
         api = new SpotifyApi();
         spotify = api.getService();
 
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             ArrayList<ParcelableTrack> parcelableTracks = savedInstanceState.getParcelableArrayList(SAVED_TRACK_LIST_TAG);
-            if(parcelableTracks != null){
-                for(ParcelableTrack parcelableTrack : parcelableTracks){
+            if (parcelableTracks != null) {
+                for (ParcelableTrack parcelableTrack : parcelableTracks) {
                     mTracksAdapter.add(parcelableTrack.getSpotifyTrack());
                 }
             }
-        }else{
-            if(artistID != null){
-                new SpotifyTopTracksSearchTask().execute(artistID);
+        } else {
+            if (artistID != null) {
+                Map<String, Object> options = new HashMap<>();
+                options.put(COUNTRY_KEY,
+                        PreferenceManager
+                                .getDefaultSharedPreferences(getActivity())
+                                .getString(getString(R.string.pref_country_key), getString(R.string.pref_country_default)));
+
+                spotify.getArtistTopTrack(artistID, options, new Callback<Tracks>() {
+                    @Override
+                    public void success(final Tracks tracks, Response response) {
+                        final Activity activity = getActivity();
+                        if (activity != null && isAdded()) {
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mTracksAdapter.clear();
+                                    if (tracks.tracks.size() > 0) {
+                                        for (Track track : tracks.tracks) {
+                                            mTracksAdapter.add(track);
+                                        }
+                                    } else {
+                                        Toast.makeText(getActivity(), "No results found!", Toast.LENGTH_LONG).show();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void failure(final RetrofitError error) {
+                        final Activity activity = getActivity();
+                        if (activity != null && isAdded()) {
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mTracksAdapter.clear();
+                                    SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
+                                    Toast.makeText(getActivity(),
+                                            (spotifyError.hasErrorDetails() ? spotifyError.getErrorDetails().message : spotifyError.getMessage()),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+                    }
+                });
+
             }
         }
 
@@ -76,10 +120,9 @@ public class TopTracksActivityFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
-        //outState.putString(SAVED_ARTIST_ID_TAG, artistID);
-        if(mTracksAdapter != null){
+        if (mTracksAdapter != null) {
             ArrayList<ParcelableTrack> parcelableTracks = new ArrayList<>();
-            for(int i=0; i<mTracksAdapter.getCount(); i++){
+            for (int i = 0; i < mTracksAdapter.getCount(); i++) {
                 parcelableTracks.add(new ParcelableTrack(mTracksAdapter.getItem(i)));
             }
             outState.putParcelableArrayList(SAVED_TRACK_LIST_TAG, parcelableTracks);
@@ -88,62 +131,4 @@ public class TopTracksActivityFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
-    public class SpotifyTopTracksSearchTask extends AsyncTask<String, Void, Tracks> implements Callback<Tracks> {
-
-        private final String LOG_TAG = SpotifyTopTracksSearchTask.class.getSimpleName();
-        private final String COUNTRY_KEY = "country";
-        private String USER_COUNTRY;
-
-        @Override
-        protected Tracks doInBackground(String... params) {
-            try{
-                Map<String, Object> options = new HashMap<>();
-                options.put(COUNTRY_KEY, USER_COUNTRY);
-                spotify.getArtistTopTrack(params[0], options, this);
-                return null;
-            }
-            catch (Exception e){
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            USER_COUNTRY =  PreferenceManager
-                    .getDefaultSharedPreferences(getActivity())
-                    .getString(getString(R.string.pref_country_key), getString(R.string.pref_country_default));
-        }
-
-        @Override
-        public void success(final Tracks tracks, Response response) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mTracksAdapter.clear();
-                    if(tracks.tracks.size() > 0){
-                        for(Track track : tracks.tracks){
-                            mTracksAdapter.add(track);
-                        }
-                    }else{
-                        Toast.makeText(getActivity(), "No results found!", Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void failure(final RetrofitError error) {
-            getActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mTracksAdapter.clear();
-                    SpotifyError spotifyError = SpotifyError.fromRetrofitError(error);
-                    Toast.makeText(getActivity(),
-                            (spotifyError.hasErrorDetails() ? spotifyError.getErrorDetails().message : spotifyError.getMessage()),
-                            Toast.LENGTH_LONG).show();
-                }
-            });
-        }
-    }
 }

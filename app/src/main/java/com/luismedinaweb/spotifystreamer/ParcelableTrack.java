@@ -22,14 +22,6 @@ public class ParcelableTrack extends Track implements Parcelable{
         return 0;
     }
 
-    public ParcelableImage getTrackImage() {
-        return trackImage;
-    }
-
-    public void setTrackImage(ParcelableImage trackImage) {
-        this.trackImage = trackImage;
-    }
-
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);

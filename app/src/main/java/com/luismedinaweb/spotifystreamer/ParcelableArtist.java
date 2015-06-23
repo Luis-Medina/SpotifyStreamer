@@ -31,14 +31,6 @@ public class ParcelableArtist extends Artist implements Parcelable{
         artistImage = in.readParcelable(ParcelableImage.class.getClassLoader());
     }
 
-    public ParcelableImage getArtistImage() {
-        return artistImage;
-    }
-
-    public void setArtistImage(ParcelableImage artistImage) {
-        this.artistImage = artistImage;
-    }
-
     public ParcelableArtist(Artist artist){
         name = artist.name;
         if(artist.images.size() > 0){
