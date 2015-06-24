@@ -23,16 +23,19 @@ public class ParcelableArtist extends Artist implements Parcelable{
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
+        dest.writeString(id);
         dest.writeParcelable(artistImage, flags);
     }
 
     public ParcelableArtist(Parcel in){
         name = in.readString();
+        id = in.readString();
         artistImage = in.readParcelable(ParcelableImage.class.getClassLoader());
     }
 
     public ParcelableArtist(Artist artist){
         name = artist.name;
+        id = artist.id;
         if(artist.images.size() > 0){
             Image image = artist.images.get(0);
             artistImage = new ParcelableImage(image.height, image.width, image.url);
@@ -42,6 +45,7 @@ public class ParcelableArtist extends Artist implements Parcelable{
     public Artist getSpotifyArtist(){
         Artist toReturn = new Artist();
         toReturn.name = name;
+        toReturn.id = id;
         toReturn.images = new ArrayList<>();
         if(artistImage != null) toReturn.images.add(artistImage);
         return toReturn;

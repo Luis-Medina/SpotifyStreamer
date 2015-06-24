@@ -8,4 +8,7 @@
     <string name="artist_name_placeholder">Artist Name</string>
     <string name="album_name_placeholder">Album name</string>
     <string name="track_name_placeholder">Track Name</string>
+    <string name="connection_error">Unable to connect. Please verify your network connection.</string>
+    <string name="no_connection">There is no internet connection. Please connect to the internet and try again. </string>
+    <string name="no_results">No results found. Please refine your search and try again.</string>
 </resources>

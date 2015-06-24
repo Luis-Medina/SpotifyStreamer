@@ -27,17 +27,20 @@ public class TracksAdapter extends ArrayAdapter<Track> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Track track = getItem(position);
-
+        ViewHolder holder;
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_track, parent, false);
+            holder = new ViewHolder();
+            holder.trackTextView = (TextView) convertView.findViewById(R.id.track_textview);
+            holder.albumTextView = (TextView) convertView.findViewById(R.id.album_textview);
+            holder.trackImageView = (ImageView) convertView.findViewById(R.id.track_imageview);
+            convertView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
 
-        TextView trackTextview = (TextView) convertView.findViewById(R.id.track_textview);
-        trackTextview.setText(track.name);
-        TextView albumTextview = (TextView) convertView.findViewById(R.id.album_textview);
-        albumTextview.setText(track.album.name);
-
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.track_imageview);
+        holder.trackTextView.setText(track.name);
+        holder.albumTextView.setText(track.album.name);
 
         String url;
         if (track.album.images.size() > 0) {
@@ -46,12 +49,18 @@ public class TracksAdapter extends ArrayAdapter<Track> {
                 Picasso.with(getContext()).load(url)
                         .error(R.drawable.error)
                         .placeholder(R.drawable.placeholder)
-                        .into(imageView);
+                        .into(holder.trackImageView);
             }
         }
 
         return convertView;
 
+    }
+
+    class ViewHolder {
+        TextView trackTextView;
+        TextView albumTextView;
+        ImageView trackImageView;
     }
 }
 

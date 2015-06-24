@@ -28,14 +28,19 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         Artist artist = getItem(position);
+        ViewHolder holder;
 
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artist, parent, false);
+            holder = new ViewHolder();
+            holder.artistTextView = (TextView) convertView.findViewById(R.id.artist_textview);
+            holder.artistImageView = (ImageView) convertView.findViewById(R.id.artist_imageview);
+            convertView.setTag(holder);
+        } else {
+            holder = (ViewHolder) convertView.getTag();
         }
 
-        TextView artistTextView = (TextView) convertView.findViewById(R.id.artist_textview);
-        artistTextView.setText(artist.name);
-        ImageView imageView = (ImageView) convertView.findViewById(R.id.artist_imageview);
+        holder.artistTextView.setText(artist.name);
 
         String url;
         if (artist.images.size() > 0) {
@@ -44,12 +49,16 @@ public class ArtistsAdapter extends ArrayAdapter<Artist> {
                 Picasso.with(getContext()).load(url)
                         .error(R.drawable.error)
                         .placeholder(R.drawable.placeholder)
-                        .into(imageView);
+                        .into(holder.artistImageView);
             }
         }
 
-
         return convertView;
 
+    }
+
+    class ViewHolder {
+        TextView artistTextView;
+        ImageView artistImageView;
     }
 }

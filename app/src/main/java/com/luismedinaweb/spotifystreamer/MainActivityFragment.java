@@ -1,6 +1,7 @@
 package com.luismedinaweb.spotifystreamer;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -11,7 +12,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
+
 import java.util.ArrayList;
+
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
@@ -34,6 +37,7 @@ public class MainActivityFragment extends Fragment {
     private ArtistsAdapter mArtistsAdapter;
     private SpotifyApi api;
     private SpotifyService spotify;
+    private Toast mToast;
 
     public MainActivityFragment() {
 
@@ -82,41 +86,55 @@ public class MainActivityFragment extends Fragment {
             public boolean onQueryTextSubmit(String query) {
                 if (!query.isEmpty()) {
                     searchView.clearFocus();
-                    getActivity().findViewById(R.id.progressBar_Layout).setVisibility(View.VISIBLE);
+                    Activity activity = getActivity();
+                    if (activity != null && isAdded()) {
+                        if (NetworkUtils.isOnline(activity)) {
+                            getActivity().findViewById(R.id.progressBar_Layout).setVisibility(View.VISIBLE);
+                            spotify.searchArtists(query, new Callback<ArtistsPager>() {
 
-                    spotify.searchArtists(query, new Callback<ArtistsPager>() {
-                        @Override
-                        public void success(final ArtistsPager artistsPager, Response response) {
-                            final Activity activity = getActivity();
-                            if (activity != null && isAdded()) {
-                                activity.runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        activity.findViewById(R.id.progressBar_Layout).setVisibility(View.GONE);
-                                        mArtistsAdapter.clear();
-                                        if (artistsPager.artists.items.size() > 0) {
-                                            for (Artist artist : artistsPager.artists.items) {
-                                                mArtistsAdapter.add(artist);
+                                @Override
+                                public void success(final ArtistsPager artistsPager, Response response) {
+                                    final Activity activity = getActivity();
+                                    if (activity != null && isAdded()) {
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                activity.findViewById(R.id.progressBar_Layout).setVisibility(View.GONE);
+                                                mArtistsAdapter.clear();
+                                                if (artistsPager.artists.items.size() > 0) {
+                                                    for (Artist artist : artistsPager.artists.items) {
+                                                        mArtistsAdapter.add(artist);
+                                                    }
+                                                } else {
+                                                    showToast(activity, getString(R.string.no_results), Toast.LENGTH_LONG);
+                                                }
                                             }
-                                        } else {
-                                            Toast.makeText(activity, "No results found! Please refine your search and try again.", Toast.LENGTH_LONG).show();
-                                        }
+                                        });
                                     }
-                                });
-                            }
-                        }
+                                }
 
-                        @Override
-                        public void failure(RetrofitError error) {
-                            Activity activity = getActivity();
-                            if (activity != null && isAdded()) {
-                                activity.findViewById(R.id.progressBar_Layout).setVisibility(View.GONE);
-                                mArtistsAdapter.clear();
-                                Toast.makeText(activity, error.getMessage(), Toast.LENGTH_LONG).show();
-                            }
+                                @Override
+                                public void failure(final RetrofitError error) {
+                                    final Activity activity = getActivity();
+                                    if (activity != null && isAdded()) {
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                String message = (error.getKind() == RetrofitError.Kind.NETWORK
+                                                        ? getString(R.string.connection_error)
+                                                        : error.getMessage());
+                                                activity.findViewById(R.id.progressBar_Layout).setVisibility(View.GONE);
+                                                mArtistsAdapter.clear();
+                                                showToast(activity, message, Toast.LENGTH_LONG);
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        } else {
+                            showToast(activity, getString(R.string.no_connection), Toast.LENGTH_LONG);
                         }
-                    });
-
+                    }
                 }
                 return true;
             }
@@ -127,6 +145,14 @@ public class MainActivityFragment extends Fragment {
             }
         });
 
+    }
+
+    private void showToast(Context context, String message, int duration) {
+        if (mToast != null) {
+            mToast.cancel();
+        }
+        mToast = Toast.makeText(context, message, duration);
+        mToast.show();
     }
 
     @Override
@@ -143,6 +169,17 @@ public class MainActivityFragment extends Fragment {
         super.onSaveInstanceState(outState);
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mToast != null) mToast.cancel();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mToast != null) mToast.cancel();
+    }
 
 
 }
