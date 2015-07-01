@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -30,13 +31,14 @@ import retrofit.client.Response;
  */
 public class TopTracksActivityFragment extends Fragment {
 
+    public static final String TRACK_ID = "trackID";
     private static final String SAVED_TRACK_LIST_TAG = "savedTrackList";
     private static final String LOG_TAG = TopTracksActivityFragment.class.getSimpleName();
+    private final String COUNTRY_KEY = "country";
     private TracksAdapter mTracksAdapter;
     private SpotifyApi api;
     private SpotifyService spotify;
     private String artistID;
-    private final String COUNTRY_KEY = "country";
     private Toast mToast;
 
     public TopTracksActivityFragment() {
@@ -50,7 +52,10 @@ public class TopTracksActivityFragment extends Fragment {
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
-        artistID = getActivity().getIntent().getStringExtra(MainActivityFragment.ARTIST_ID_TAG);
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            artistID = arguments.getString(MainActivityFragment.ARTIST_ID_TAG);
+        }
 
         ListView mTracksListView = (ListView) getActivity().findViewById(R.id.track_listview);
         mTracksAdapter = new TracksAdapter(getActivity(), new ArrayList<Track>());
@@ -129,6 +134,12 @@ public class TopTracksActivityFragment extends Fragment {
         }
 
         mTracksListView.setAdapter(mTracksAdapter);
+        mTracksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                ((ClickCallback) getActivity()).onItemSelected(mTracksAdapter.getItem(position).id);
+            }
+        });
 
         super.onActivityCreated(savedInstanceState);
     }
@@ -169,6 +180,12 @@ public class TopTracksActivityFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         if (mToast != null) mToast.cancel();
+    }
+
+
+    public interface ClickCallback {
+
+        void onItemSelected(String trackId);
     }
 
 }

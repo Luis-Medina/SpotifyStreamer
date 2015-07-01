@@ -2,23 +2,44 @@ package com.luismedinaweb.spotifystreamer;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 
-public class TopTracksActivity extends ActionBarActivity {
+public class TopTracksActivity extends ActionBarActivity implements TopTracksActivityFragment.ClickCallback {
 
+    private static final String PLAYERFRAGMENT_TAG = "PFTAG";
+    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_top_tracks);
 
+        mTwoPane = getSupportFragmentManager().findFragmentById(R.id.fragment_main) != null;
+
         if(getSupportActionBar() != null){
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setSubtitle(getIntent().getStringExtra(MainActivityFragment.ARTIST_NAME_TAG));
+        }
+
+        if (savedInstanceState == null) {
+            // Create the detail fragment and add it to the activity
+            // using a fragment transaction.
+
+            Bundle arguments = new Bundle();
+            arguments.putString(MainActivityFragment.ARTIST_ID_TAG, getIntent().getStringExtra(MainActivityFragment.ARTIST_ID_TAG));
+            arguments.putString(MainActivityFragment.ARTIST_NAME_TAG, getIntent().getStringExtra(MainActivityFragment.ARTIST_NAME_TAG));
+
+            TopTracksActivityFragment fragment = new TopTracksActivityFragment();
+            fragment.setArguments(arguments);
+
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.tracks_detail_container, fragment)
+                    .commit();
         }
     }
 
@@ -49,4 +70,35 @@ public class TopTracksActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public void onItemSelected(String trackId) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        PlayerFragment fragment = new PlayerFragment();
+        if (mTwoPane) {
+            // In two-pane mode, show the detail view in this activity by
+            // adding or replacing the detail fragment using a
+            // fragment transaction.
+            Bundle args = new Bundle();
+            args.putString(TopTracksActivityFragment.TRACK_ID, trackId);
+
+            fragment.setArguments(args);
+            fragment.show(fragmentManager, PLAYERFRAGMENT_TAG);
+        } else {
+            Intent intent = new Intent(this, PlayerActivity.class)
+                    .putExtra(TopTracksActivityFragment.TRACK_ID, trackId);
+            startActivity(intent);
+//
+//            // The device is smaller, so show the fragment fullscreen
+//            FragmentTransaction transaction = fragmentManager.beginTransaction();
+//            // For a little polish, specify a transition animation
+//            transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+//            // To make it fullscreen, use the 'content' root view as the container
+//            // for the fragment, which is always the root view for the activity
+//            transaction.add(R.id.player_container, fragment)
+//                    .addToBackStack(null).commit();
+        }
+    }
+
+
 }

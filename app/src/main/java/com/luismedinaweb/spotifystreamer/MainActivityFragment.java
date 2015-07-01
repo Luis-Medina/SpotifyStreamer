@@ -2,7 +2,6 @@ package com.luismedinaweb.spotifystreamer;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.SearchView;
@@ -74,10 +73,8 @@ public class MainActivityFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Artist artist = mArtistsAdapter.getItem(position);
-                Intent detailIntent = new Intent(getActivity(), TopTracksActivity.class)
-                        .putExtra(ARTIST_NAME_TAG, artist.name)
-                        .putExtra(ARTIST_ID_TAG, artist.id);
-                startActivity(detailIntent);
+                ((ClickCallback) getActivity()).onItemSelected(artist.id, artist.name);
+
             }
         });
 
@@ -179,6 +176,19 @@ public class MainActivityFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         if (mToast != null) mToast.cancel();
+    }
+
+
+    /**
+     * A callback interface that all activities containing this fragment must
+     * implement. This mechanism allows activities to be notified of item
+     * selections.
+     */
+    public interface ClickCallback {
+        /**
+         * Callback for when an item has been selected.
+         */
+        void onItemSelected(String artistID, String artistName);
     }
 
 

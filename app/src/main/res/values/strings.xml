@@ -11,4 +11,8 @@
     <string name="connection_error">Unable to connect. Please verify your network connection.</string>
     <string name="no_connection">There is no internet connection. Please connect to the internet and try again. </string>
     <string name="no_results">No results found. Please refine your search and try again.</string>
+    <string name="title_activity_player">PlayerActivity</string>
+
+    <string name="placeholder_text">Some text</string>
+    <string name="player_album_image">player_album_image</string>
 </resources>
