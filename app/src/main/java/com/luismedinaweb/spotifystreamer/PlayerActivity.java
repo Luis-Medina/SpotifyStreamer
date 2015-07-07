@@ -5,6 +5,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
+
 
 public class PlayerActivity extends ActionBarActivity {
 
@@ -17,11 +19,14 @@ public class PlayerActivity extends ActionBarActivity {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
 
-            Bundle arguments = new Bundle();
-
-
-            PlayerFragment fragment = new PlayerFragment();
-            fragment.setArguments(arguments);
+            ArrayList<ParcelableTrack> tracks = getIntent().getParcelableArrayListExtra(PlayerFragment.TRACKS_PARAM);
+            int selectedPosition = getIntent().getIntExtra(PlayerFragment.SELECTED_INDEX_PARAM, -1);
+            PlayerFragment fragment;
+            if (tracks != null) {
+                fragment = PlayerFragment.newInstance(tracks, selectedPosition);
+            } else {
+                fragment = new PlayerFragment();
+            }
 
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.player_container, fragment)

@@ -8,6 +8,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
+
 
 public class TopTracksActivity extends ActionBarActivity implements TopTracksActivityFragment.ClickCallback {
 
@@ -72,21 +74,19 @@ public class TopTracksActivity extends ActionBarActivity implements TopTracksAct
     }
 
     @Override
-    public void onItemSelected(String trackId) {
+    public void onItemSelected(ArrayList<ParcelableTrack> tracks, int selectedTrack) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        PlayerFragment fragment = new PlayerFragment();
+        PlayerFragment fragment = PlayerFragment.newInstance(tracks, selectedTrack);
         if (mTwoPane) {
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a
             // fragment transaction.
-            Bundle args = new Bundle();
-            args.putString(TopTracksActivityFragment.TRACK_ID, trackId);
 
-            fragment.setArguments(args);
             fragment.show(fragmentManager, PLAYERFRAGMENT_TAG);
         } else {
             Intent intent = new Intent(this, PlayerActivity.class)
-                    .putExtra(TopTracksActivityFragment.TRACK_ID, trackId);
+                    .putParcelableArrayListExtra(PlayerFragment.TRACKS_PARAM, tracks)
+                    .putExtra(PlayerFragment.SELECTED_INDEX_PARAM, selectedTrack);
             startActivity(intent);
 //
 //            // The device is smaller, so show the fragment fullscreen

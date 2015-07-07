@@ -7,6 +7,8 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
+
 
 public class MainActivity extends ActionBarActivity implements MainActivityFragment.ClickCallback, TopTracksActivityFragment.ClickCallback {
 
@@ -41,7 +43,6 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
 
@@ -62,6 +63,11 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
+            return true;
+        }
+        if (id == R.id.start_service) {
+            Intent serviceIntent = new Intent(getApplicationContext(), PlayerService.class);
+            startService(serviceIntent);
             return true;
         }
 
@@ -93,17 +99,13 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
     }
 
     @Override
-    public void onItemSelected(String trackId) {
+    public void onItemSelected(ArrayList<ParcelableTrack> tracks, int selectedTrack) {
         if (mTwoPane) {
             FragmentManager fragmentManager = getSupportFragmentManager();
-            PlayerFragment fragment = new PlayerFragment();
+            PlayerFragment fragment = PlayerFragment.newInstance(tracks, selectedTrack);
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a
             // fragment transaction.
-            Bundle args = new Bundle();
-            args.putString(TopTracksActivityFragment.TRACK_ID, trackId);
-
-            fragment.setArguments(args);
             fragment.show(fragmentManager, PLAYERFRAGMENT_TAG);
         }
     }

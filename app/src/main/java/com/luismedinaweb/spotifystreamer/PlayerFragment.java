@@ -1,12 +1,36 @@
 package com.luismedinaweb.spotifystreamer;
 
+import android.app.Dialog;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.squareup.picasso.Picasso;
+
+import java.util.ArrayList;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 /**
@@ -20,14 +44,65 @@ import android.view.ViewGroup;
 public class PlayerFragment extends DialogFragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    public static final String TRACKS_PARAM = "tracks";
+    public static final String SELECTED_INDEX_PARAM = "selectedTrackPos";
+    public static final String RECEIVER_ACTION_SET_UI_READY = "setUIReady";
+    public static final String RECEIVER_ACTION_UPDATE_SONG_PROGRESS = "updateSongProgress";
+    public static final String RECEIVER_ACTION_SET_PLAY_BUTTON = "setButtonToPlay";
+    public static final String RECEIVER_PARAM_SONG_LENGTH = "songLength";
+    public static final String RECEIVER_PARAM_PLAY_ICON = "playIcon";
+    public static final String RECEIVER_PARAM_CURRENT_POSITION = "currentPosition";
+    private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
+    private final IntentFilter broadcastReceiverIntent = new IntentFilter();
+    boolean mBound = false;
+    PlayerService mService;
+    @Bind(R.id.player_artist_textView)
+    TextView artistTextView;
+    @Bind(R.id.player_album_imageView)
+    ImageView albumImageView;
+    @Bind(R.id.player_album_textView)
+    TextView albumTextView;
+    @Bind(R.id.player_track_textView)
+    TextView trackTextView;
+    @Bind(R.id.playing_time_textview)
+    TextView playingTimeTextView;
+    @Bind(R.id.finish_time_textview)
+    TextView finishTimeTextView;
+    @Bind(R.id.player_next_button)
+    ImageButton nextButton;
+    @Bind(R.id.player_play_button)
+    ImageButton playButton;
+    @Bind(R.id.player_previous_button)
+    ImageButton previousButton;
+    @Bind(R.id.player_seekBar)
+    SeekBar seekBar;
+    private int mSelectedTrackPosition;
+    private ParcelableTrack mSelectedTrack;
+    private ArrayList<ParcelableTrack> mTrackList;
+    private LocalBroadcastManager bManager;
+    private ServiceUpdateReceiver serviceUpdateReceiver = new ServiceUpdateReceiver();
 
     //private OnFragmentInteractionListener mListener;
+    /**
+     * Defines callbacks for service binding, passed to bindService()
+     */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+            mService.initMediaPlayer(mSelectedTrack);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
 
     public PlayerFragment() {
         // Required empty public constructor
@@ -37,16 +112,14 @@ public class PlayerFragment extends DialogFragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
      * @return A new instance of fragment PlayerFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static PlayerFragment newInstance(String param1, String param2) {
+    public static PlayerFragment newInstance(ArrayList<ParcelableTrack> tracks, int selectedPosition) {
         PlayerFragment fragment = new PlayerFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putParcelableArrayList(TRACKS_PARAM, tracks);
+        args.putInt(SELECTED_INDEX_PARAM, selectedPosition);
         fragment.setArguments(args);
         return fragment;
     }
@@ -54,37 +127,214 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+
+    }
+
+    /**
+     * The system calls this only when creating the layout in a dialog.
+     */
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        // The only reason you might override this method when using onCreateView() is
+        // to modify any dialog characteristics. For example, the dialog includes a
+        // title by default, but your custom layout might not need it. So here you can
+        // remove the dialog title, but you must call the superclass to get the Dialog.
+        Dialog dialog = super.onCreateDialog(savedInstanceState);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        return dialog;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+    }
+
+    private void initUIWithTrack(ParcelableTrack selectedTrack) {
+        artistTextView.setText(selectedTrack.getArtistName());
+        albumTextView.setText(selectedTrack.getAlbumName());
+        trackTextView.setText(selectedTrack.name);
+        ParcelableImage parcelableImage = selectedTrack.getTrackImage();
+        if (parcelableImage != null) {
+            Picasso.with(getActivity()).load(parcelableImage.url)
+                    .error(R.drawable.error)
+                    .placeholder(R.drawable.placeholder)
+                    .into(albumImageView);
         }
+        playingTimeTextView.setText("0:00");
+        finishTimeTextView.setText("0:30");
+    }
+
+    private void initSeekBar(int max) {
+        seekBar.setMax(max);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (mBound && fromUser) {
+                    mService.seekToPosition(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+        });
+    }
+
+    private void enableMediaControls(boolean enable) {
+        playButton.setEnabled(enable);
+        nextButton.setEnabled(enable);
+        previousButton.setEnabled(enable);
+        seekBar.setEnabled(enable);
+    }
+
+    @OnClick(R.id.player_play_button)
+    public void onPlayPressed() {
+        if (mBound) {
+            if (!mService.isStarted()) {
+                getActivity().startService(new Intent(getActivity(), PlayerService.class));
+            }
+            mService.startOrPausePlaying();
+        }
+    }
+
+    @OnClick(R.id.player_previous_button)
+    public void onPreviousPressed() {
+        if (mBound) {
+            Toast.makeText(getActivity(), "Previous pressed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @OnClick(R.id.player_next_button)
+    public void onNextPressed() {
+        if (mBound) {
+            Toast.makeText(getActivity(), "Next pressed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void initializeBroadcastReceiver() {
+        try {
+            bManager = LocalBroadcastManager.getInstance(getActivity());
+            broadcastReceiverIntent.addAction(RECEIVER_ACTION_SET_UI_READY);
+            broadcastReceiverIntent.addAction(RECEIVER_ACTION_SET_PLAY_BUTTON);
+            broadcastReceiverIntent.addAction(RECEIVER_ACTION_UPDATE_SONG_PROGRESS);
+            bManager.registerReceiver(serviceUpdateReceiver, broadcastReceiverIntent);
+        } catch (Exception e) {
+            Log.e(LOG_TAG, e.getMessage());
+        }
+
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-        DisplayMetrics displaymetrics = new DisplayMetrics();
-        getDialog().getWindow().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        //Resize dialog when in two pane mode
+        if (getDialog() != null) {
+            DisplayMetrics displaymetrics = new DisplayMetrics();
+            getDialog().getWindow().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
 
-        int height = displaymetrics.heightPixels;
-        int width = displaymetrics.widthPixels;
-        if (width < height) {
-            width = (int) (width * 0.9);
-            height = (int) (height * 0.7);
-        } else {
-            width = (int) (width * 0.7);
-            height = (int) (height * 0.9);
+            int height = displaymetrics.heightPixels;
+            int width = displaymetrics.widthPixels;
+            if (width < height) {
+                width = (int) (width * 0.9);
+                height = (int) (height * 0.7);
+            } else {
+                width = (int) (width * 0.7);
+                height = (int) (height * 0.9);
+            }
+
+            getDialog().getWindow().setLayout(width, height);
         }
 
-        getDialog().getWindow().setLayout(width, height);
+        if (getArguments() != null) {
+            mTrackList = getArguments().getParcelableArrayList(TRACKS_PARAM);
+            if (mTrackList != null) {
+                mSelectedTrackPosition = getArguments().getInt(SELECTED_INDEX_PARAM);
+                mSelectedTrack = mTrackList.get(mSelectedTrackPosition);
+
+                enableMediaControls(false);
+                initUIWithTrack(mSelectedTrack);
+
+                // Bind to LocalService
+                Intent intent = new Intent(getActivity(), PlayerService.class);
+                getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+            }
+        }
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        initializeBroadcastReceiver();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        try {
+            bManager.unregisterReceiver(serviceUpdateReceiver);
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Unable to unregister: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // Unbind from the service
+        if (mBound) {
+            getActivity().unbindService(mConnection);
+            mBound = false;
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ButterKnife.unbind(this);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_fragment_player, container, false);
+        View view = inflater.inflate(R.layout.fragment_player, container, false);
+        ButterKnife.bind(this, view);
+        return view;
+    }
+
+    public class ServiceUpdateReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(RECEIVER_ACTION_SET_UI_READY)) {
+                enableMediaControls(true);
+                initSeekBar(intent.getExtras().getInt(RECEIVER_PARAM_SONG_LENGTH));
+            } else if (intent.getAction().equals(RECEIVER_ACTION_UPDATE_SONG_PROGRESS)) {
+                double mCurrentPosition = intent.getExtras().getDouble(RECEIVER_PARAM_CURRENT_POSITION);
+                Log.d("SEEKER", String.valueOf(mCurrentPosition));
+                seekBar.setProgress((int) mCurrentPosition);
+                int secs = (int) Math.ceil(mCurrentPosition / 1000);
+                Log.d("SEEKER", String.valueOf(secs));
+                playingTimeTextView.setText(String.format("0:%02d", secs));
+                finishTimeTextView.setText(String.format("0:%02d", 30 - secs));
+            } else if (intent.getAction().equals(RECEIVER_ACTION_SET_PLAY_BUTTON)) {
+                boolean setToPlay = intent.getExtras().getBoolean(RECEIVER_PARAM_PLAY_ICON);
+                if (setToPlay) {
+                    playButton.setImageResource(android.R.drawable.ic_media_play);
+                } else {
+                    playButton.setImageResource(android.R.drawable.ic_media_pause);
+                }
+            }
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event

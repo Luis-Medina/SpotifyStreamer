@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingBottom="@dimen/player_bottom_margin"
-    android:paddingTop="@dimen/player_top_margin"
+    android:paddingBottom="10dp"
+    android:paddingTop="10dp"
     tools:context="com.luismedinaweb.spotifystreamer.PlayerFragment">
 
     <TextView
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="@string/placeholder_text"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:textSize="@dimen/player_artist_textview_size" />
 
     <TextView
         android:id="@+id/player_album_textView"
@@ -21,16 +21,15 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="@string/placeholder_text"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
+        android:textSize="@dimen/player_album_textview_size" />
 
     <ImageView
         android:id="@+id/player_album_imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="@dimen/player_album_image_max_dimension"
+        android:layout_height="@dimen/player_album_image_max_dimension"
         android:layout_gravity="center_horizontal"
-        android:layout_margin="@dimen/player_album_image_margin"
-        android:contentDescription="@string/player_album_image"
-        android:maxHeight="@dimen/player_album_image_max_height" />
+        android:layout_margin="8dp"
+        android:contentDescription="@string/player_album_image" />
 
     <TextView
         android:id="@+id/player_track_textView"
@@ -38,13 +37,16 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="@string/placeholder_text"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:textSize="@dimen/player_track_textview_size" />
 
     <SeekBar
         android:id="@+id/player_seekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:indeterminate="false" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -55,55 +57,54 @@
             android:id="@+id/playing_time_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
             android:layout_weight="1"
             android:text="@string/placeholder_text"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textSize="@dimen/player_time_textview_size" />
 
         <TextView
             android:id="@+id/finish_time_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
             android:layout_weight="1"
             android:gravity="right"
             android:text="@string/placeholder_text"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textSize="@dimen/player_time_textview_size" />
     </LinearLayout>
-
-    <MediaController
-        android:id="@+id/mediaController"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        android:layout_marginTop="10dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingLeft="20dp"
-        android:paddingRight="20dp">
+        android:paddingRight="20dp"
+        android:weightSum="5">
 
-        <Button
+        <ImageButton
             android:id="@+id/player_previous_button"
             android:layout_width="0dip"
             android:layout_height="@dimen/player_button_size"
             android:layout_marginRight="20dp"
             android:layout_weight="1"
-            android:text="@string/placeholder_text" />
+            android:src="@android:drawable/ic_media_previous" />
 
-        <Button
+        <ImageButton
             android:id="@+id/player_play_button"
             android:layout_width="0dip"
             android:layout_height="@dimen/player_button_size"
             android:layout_marginRight="20dp"
             android:layout_weight="1"
-            android:text="@string/placeholder_text" />
+            android:src="@android:drawable/ic_media_play" />
 
-        <Button
+        <ImageButton
             android:id="@+id/player_next_button"
             android:layout_width="0dip"
             android:layout_height="@dimen/player_button_size"
             android:layout_weight="1"
-            android:text="@string/placeholder_text" />
+            android:src="@android:drawable/ic_media_next" />
     </LinearLayout>
 </LinearLayout>

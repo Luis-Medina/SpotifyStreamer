@@ -137,7 +137,12 @@ public class TopTracksActivityFragment extends Fragment {
         mTracksListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ((ClickCallback) getActivity()).onItemSelected(mTracksAdapter.getItem(position).id);
+                ArrayList<ParcelableTrack> tracks = new ArrayList<>();
+                for (int i = 0; i < mTracksAdapter.getCount(); i++) {
+                    ParcelableTrack selectedTrack = new ParcelableTrack(mTracksAdapter.getItem(position));
+                    tracks.add(selectedTrack);
+                }
+                ((ClickCallback) getActivity()).onItemSelected(tracks, position);
             }
         });
 
@@ -185,7 +190,7 @@ public class TopTracksActivityFragment extends Fragment {
 
     public interface ClickCallback {
 
-        void onItemSelected(String trackId);
+        void onItemSelected(ArrayList<ParcelableTrack> tracks, int selectedTrack);
     }
 
 }
