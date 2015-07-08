@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -14,6 +15,7 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
 
     private static final String TRACKSFRAGMENT_TAG = "DFTAG";
     private static final String PLAYERFRAGMENT_TAG = "PFTAG";
+    private static final int MENU_ITEM_NOW_PLAYING = 1;
     private boolean mTwoPane;
 
     @Override
@@ -38,6 +40,7 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
             mTwoPane = false;
         }
 
+
     }
 
     @Override
@@ -54,6 +57,24 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        try {
+            if (PlayerService.isStarted()) {
+                if (menu.findItem(MENU_ITEM_NOW_PLAYING) == null) {
+                    menu.add(Menu.NONE, MENU_ITEM_NOW_PLAYING, Menu.FIRST, getString(R.string.menu_item_now_playing));
+                }
+            } else {
+                if (menu.findItem(MENU_ITEM_NOW_PLAYING) != null) {
+                    menu.removeItem(MENU_ITEM_NOW_PLAYING);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("DDD", e.getMessage());
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -65,11 +86,11 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
-        if (id == R.id.start_service) {
-            Intent serviceIntent = new Intent(getApplicationContext(), PlayerService.class);
-            startService(serviceIntent);
+        if (id == MENU_ITEM_NOW_PLAYING) {
+            startActivity(new Intent(this, PlayerActivity.class));
             return true;
         }
+
 
         return super.onOptionsItemSelected(item);
     }

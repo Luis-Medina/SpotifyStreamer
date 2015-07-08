@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
@@ -49,6 +50,7 @@ public class PlayerFragment extends DialogFragment {
     public static final String RECEIVER_ACTION_SET_UI_READY = "setUIReady";
     public static final String RECEIVER_ACTION_UPDATE_SONG_PROGRESS = "updateSongProgress";
     public static final String RECEIVER_ACTION_SET_PLAY_BUTTON = "setButtonToPlay";
+    public static final String RECEIVER_ACTION_UPDATE_SONG_STATUS = "setSongStatus";
     public static final String RECEIVER_PARAM_SONG_LENGTH = "songLength";
     public static final String RECEIVER_PARAM_PLAY_ICON = "playIcon";
     public static final String RECEIVER_PARAM_CURRENT_POSITION = "currentPosition";
@@ -81,6 +83,7 @@ public class PlayerFragment extends DialogFragment {
     private ArrayList<ParcelableTrack> mTrackList;
     private LocalBroadcastManager bManager;
     private ServiceUpdateReceiver serviceUpdateReceiver = new ServiceUpdateReceiver();
+    private boolean mInfoFromService = false;
 
     //private OnFragmentInteractionListener mListener;
     /**
@@ -95,7 +98,17 @@ public class PlayerFragment extends DialogFragment {
             PlayerService.LocalBinder binder = (PlayerService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
-            mService.initMediaPlayer(mSelectedTrack);
+            if (mSelectedTrack == null) {
+                mSelectedTrack = mService.getCurrentTrack();
+                initUIWithTrack(mSelectedTrack);
+                initSeekBar(mService.getSongDuration());
+            }
+            if (mSelectedTrack != null) {
+                enableMediaControls(true);
+                mService.initMediaPlayer(mSelectedTrack, true);
+            }
+
+            getActivity().startService(new Intent(getActivity(), PlayerService.class));
         }
 
         @Override
@@ -127,7 +140,7 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     /**
@@ -162,7 +175,7 @@ public class PlayerFragment extends DialogFragment {
                     .into(albumImageView);
         }
         playingTimeTextView.setText("0:00");
-        finishTimeTextView.setText("0:30");
+        finishTimeTextView.setText("0:00");
     }
 
     private void initSeekBar(int max) {
@@ -196,10 +209,10 @@ public class PlayerFragment extends DialogFragment {
     @OnClick(R.id.player_play_button)
     public void onPlayPressed() {
         if (mBound) {
-            if (!mService.isStarted()) {
-                getActivity().startService(new Intent(getActivity(), PlayerService.class));
-            }
-            mService.startOrPausePlaying();
+//            if (!mService.isStarted()) {
+//                getActivity().startService(new Intent(getActivity(), PlayerService.class));
+//            }
+            mService.play();
         }
     }
 
@@ -223,6 +236,7 @@ public class PlayerFragment extends DialogFragment {
             broadcastReceiverIntent.addAction(RECEIVER_ACTION_SET_UI_READY);
             broadcastReceiverIntent.addAction(RECEIVER_ACTION_SET_PLAY_BUTTON);
             broadcastReceiverIntent.addAction(RECEIVER_ACTION_UPDATE_SONG_PROGRESS);
+            broadcastReceiverIntent.addAction(RECEIVER_ACTION_UPDATE_SONG_STATUS);
             bManager.registerReceiver(serviceUpdateReceiver, broadcastReceiverIntent);
         } catch (Exception e) {
             Log.e(LOG_TAG, e.getMessage());
@@ -252,21 +266,21 @@ public class PlayerFragment extends DialogFragment {
             getDialog().getWindow().setLayout(width, height);
         }
 
+        enableMediaControls(false);
+
         if (getArguments() != null) {
             mTrackList = getArguments().getParcelableArrayList(TRACKS_PARAM);
             if (mTrackList != null) {
                 mSelectedTrackPosition = getArguments().getInt(SELECTED_INDEX_PARAM);
                 mSelectedTrack = mTrackList.get(mSelectedTrackPosition);
 
-                enableMediaControls(false);
                 initUIWithTrack(mSelectedTrack);
-
-                // Bind to LocalService
-                Intent intent = new Intent(getActivity(), PlayerService.class);
-                getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
             }
         }
+
+        // Bind to LocalService
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        getActivity().bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
     }
 
@@ -318,12 +332,18 @@ public class PlayerFragment extends DialogFragment {
             if (intent.getAction().equals(RECEIVER_ACTION_SET_UI_READY)) {
                 enableMediaControls(true);
                 initSeekBar(intent.getExtras().getInt(RECEIVER_PARAM_SONG_LENGTH));
+//                if(mService != null){
+//                    getActivity().startService(new Intent(getActivity(), PlayerService.class));
+//                    //mService.startOrPausePlaying();
+//                }else{
+//                    Toast.makeText(context, "No service to play", Toast.LENGTH_SHORT).show();
+//                }
             } else if (intent.getAction().equals(RECEIVER_ACTION_UPDATE_SONG_PROGRESS)) {
                 double mCurrentPosition = intent.getExtras().getDouble(RECEIVER_PARAM_CURRENT_POSITION);
-                Log.d("SEEKER", String.valueOf(mCurrentPosition));
+                //Log.d("SEEKER", String.valueOf(mCurrentPosition));
                 seekBar.setProgress((int) mCurrentPosition);
                 int secs = (int) Math.ceil(mCurrentPosition / 1000);
-                Log.d("SEEKER", String.valueOf(secs));
+                //Log.d("SEEKER", String.valueOf(secs));
                 playingTimeTextView.setText(String.format("0:%02d", secs));
                 finishTimeTextView.setText(String.format("0:%02d", 30 - secs));
             } else if (intent.getAction().equals(RECEIVER_ACTION_SET_PLAY_BUTTON)) {
@@ -334,6 +354,7 @@ public class PlayerFragment extends DialogFragment {
                     playButton.setImageResource(android.R.drawable.ic_media_pause);
                 }
             }
+
         }
     }
 

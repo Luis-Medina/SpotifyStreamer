@@ -15,4 +15,5 @@
 
     <string name="placeholder_text">Some text</string>
     <string name="player_album_image">player_album_image</string>
+    <string name="menu_item_now_playing">Now Playing</string>
 </resources>
