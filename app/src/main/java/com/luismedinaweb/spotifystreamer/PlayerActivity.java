@@ -1,5 +1,6 @@
 package com.luismedinaweb.spotifystreamer;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
@@ -55,6 +56,7 @@ public class PlayerActivity extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
         if (id == android.R.id.home) {

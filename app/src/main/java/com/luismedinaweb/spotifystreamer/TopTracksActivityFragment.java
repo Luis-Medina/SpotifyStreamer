@@ -139,7 +139,7 @@ public class TopTracksActivityFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 ArrayList<ParcelableTrack> tracks = new ArrayList<>();
                 for (int i = 0; i < mTracksAdapter.getCount(); i++) {
-                    ParcelableTrack selectedTrack = new ParcelableTrack(mTracksAdapter.getItem(position));
+                    ParcelableTrack selectedTrack = new ParcelableTrack(mTracksAdapter.getItem(i));
                     tracks.add(selectedTrack);
                 }
                 ((ClickCallback) getActivity()).onItemSelected(tracks, position);

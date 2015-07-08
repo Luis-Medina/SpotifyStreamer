@@ -13,9 +13,14 @@ import android.os.IBinder;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -23,7 +28,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -43,8 +47,7 @@ import butterknife.OnClick;
  * create an instance of this fragment.
  */
 public class PlayerFragment extends DialogFragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
+
     public static final String TRACKS_PARAM = "tracks";
     public static final String SELECTED_INDEX_PARAM = "selectedTrackPos";
     public static final String RECEIVER_ACTION_SET_UI_READY = "setUIReady";
@@ -54,6 +57,7 @@ public class PlayerFragment extends DialogFragment {
     public static final String RECEIVER_PARAM_SONG_LENGTH = "songLength";
     public static final String RECEIVER_PARAM_PLAY_ICON = "playIcon";
     public static final String RECEIVER_PARAM_CURRENT_POSITION = "currentPosition";
+    public static final String RECEIVER_PARAM_CURRENT_TRACK = "currentTrack";
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
     private final IntentFilter broadcastReceiverIntent = new IntentFilter();
     boolean mBound = false;
@@ -84,6 +88,7 @@ public class PlayerFragment extends DialogFragment {
     private LocalBroadcastManager bManager;
     private ServiceUpdateReceiver serviceUpdateReceiver = new ServiceUpdateReceiver();
     private boolean mInfoFromService = false;
+    private ShareActionProvider mShareActionProvider;
 
     //private OnFragmentInteractionListener mListener;
     /**
@@ -101,11 +106,11 @@ public class PlayerFragment extends DialogFragment {
             if (mSelectedTrack == null) {
                 mSelectedTrack = mService.getCurrentTrack();
                 initUIWithTrack(mSelectedTrack);
-                initSeekBar(mService.getSongDuration());
+                initSeekBar(mService.getSongDuration() * 1000);
             }
             if (mSelectedTrack != null) {
                 enableMediaControls(true);
-                mService.initMediaPlayer(mSelectedTrack, true);
+                mService.initMediaPlayer(mSelectedTrack, true, mTrackList);
             }
 
             getActivity().startService(new Intent(getActivity(), PlayerService.class));
@@ -168,12 +173,13 @@ public class PlayerFragment extends DialogFragment {
         albumTextView.setText(selectedTrack.getAlbumName());
         trackTextView.setText(selectedTrack.name);
         ParcelableImage parcelableImage = selectedTrack.getTrackImage();
-        if (parcelableImage != null) {
+        if (parcelableImage != null && parcelableImage.url != null) {
             Picasso.with(getActivity()).load(parcelableImage.url)
                     .error(R.drawable.error)
                     .placeholder(R.drawable.placeholder)
                     .into(albumImageView);
         }
+
         playingTimeTextView.setText("0:00");
         finishTimeTextView.setText("0:00");
     }
@@ -218,16 +224,16 @@ public class PlayerFragment extends DialogFragment {
 
     @OnClick(R.id.player_previous_button)
     public void onPreviousPressed() {
-        if (mBound) {
-            Toast.makeText(getActivity(), "Previous pressed", Toast.LENGTH_SHORT).show();
-        }
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        intent.setAction(PlayerService.ACTION_PREVIOUS);
+        getActivity().startService(intent);
     }
 
     @OnClick(R.id.player_next_button)
     public void onNextPressed() {
-        if (mBound) {
-            Toast.makeText(getActivity(), "Next pressed", Toast.LENGTH_SHORT).show();
-        }
+        Intent intent = new Intent(getActivity(), PlayerService.class);
+        intent.setAction(PlayerService.ACTION_NEXT);
+        getActivity().startService(intent);
     }
 
     private void initializeBroadcastReceiver() {
@@ -241,7 +247,6 @@ public class PlayerFragment extends DialogFragment {
         } catch (Exception e) {
             Log.e(LOG_TAG, e.getMessage());
         }
-
     }
 
     @Override
@@ -284,6 +289,19 @@ public class PlayerFragment extends DialogFragment {
 
     }
 
+    private Intent createShareTrackIntent() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+        //shareIntent.putExtra(Intent.EXTRA_ORIGINATING_URI, mForecast + FORECAST_SHARE_HASHTAG);
+        return shareIntent;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -318,6 +336,22 @@ public class PlayerFragment extends DialogFragment {
     }
 
     @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.menu_share, menu);
+
+        // Retrieve the share menu item
+        MenuItem menuItem = menu.findItem(R.id.action_share);
+
+        // Get the provider and hold onto it to set/change the share intent.
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
+
+        mShareActionProvider.setShareIntent(createShareTrackIntent());
+
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -330,6 +364,8 @@ public class PlayerFragment extends DialogFragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(RECEIVER_ACTION_SET_UI_READY)) {
+                mSelectedTrack = intent.getExtras().getParcelable(RECEIVER_PARAM_CURRENT_TRACK);
+                initUIWithTrack(mSelectedTrack);
                 enableMediaControls(true);
                 initSeekBar(intent.getExtras().getInt(RECEIVER_PARAM_SONG_LENGTH));
 //                if(mService != null){
@@ -340,12 +376,20 @@ public class PlayerFragment extends DialogFragment {
 //                }
             } else if (intent.getAction().equals(RECEIVER_ACTION_UPDATE_SONG_PROGRESS)) {
                 double mCurrentPosition = intent.getExtras().getDouble(RECEIVER_PARAM_CURRENT_POSITION);
+                int maxDuration = intent.getExtras().getInt(RECEIVER_PARAM_SONG_LENGTH);
                 //Log.d("SEEKER", String.valueOf(mCurrentPosition));
-                seekBar.setProgress((int) mCurrentPosition);
+
                 int secs = (int) Math.ceil(mCurrentPosition / 1000);
                 //Log.d("SEEKER", String.valueOf(secs));
+                if (secs >= maxDuration) {
+                    secs = 0;
+                    mCurrentPosition = 0;
+                    seekBar.setMax(maxDuration * 1000);
+                }
                 playingTimeTextView.setText(String.format("0:%02d", secs));
-                finishTimeTextView.setText(String.format("0:%02d", 30 - secs));
+                finishTimeTextView.setText(String.format("0:%02d", maxDuration - secs));
+                seekBar.setProgress((int) mCurrentPosition);
+
             } else if (intent.getAction().equals(RECEIVER_ACTION_SET_PLAY_BUTTON)) {
                 boolean setToPlay = intent.getExtras().getBoolean(RECEIVER_PARAM_PLAY_ICON);
                 if (setToPlay) {

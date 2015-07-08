@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 public class TopTracksActivity extends ActionBarActivity implements TopTracksActivityFragment.ClickCallback {
 
     private static final String PLAYERFRAGMENT_TAG = "PFTAG";
+    private static final int MENU_ITEM_NOW_PLAYING = 1;
     private boolean mTwoPane;
 
     @Override
@@ -51,6 +53,24 @@ public class TopTracksActivity extends ActionBarActivity implements TopTracksAct
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_top_tracks, menu);
         return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        try {
+            if (PlayerService.isStarted()) {
+                if (menu.findItem(MENU_ITEM_NOW_PLAYING) == null) {
+                    menu.add(Menu.NONE, MENU_ITEM_NOW_PLAYING, Menu.FIRST, getString(R.string.menu_item_now_playing));
+                }
+            } else {
+                if (menu.findItem(MENU_ITEM_NOW_PLAYING) != null) {
+                    menu.removeItem(MENU_ITEM_NOW_PLAYING);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("MenuPreparation", e.getMessage());
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override

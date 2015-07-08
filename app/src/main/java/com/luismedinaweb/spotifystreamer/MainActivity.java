@@ -69,7 +69,7 @@ public class MainActivity extends ActionBarActivity implements MainActivityFragm
                 }
             }
         } catch (Exception e) {
-            Log.e("DDD", e.getMessage());
+            Log.e("MenuPreparation", e.getMessage());
         }
         return super.onPrepareOptionsMenu(menu);
     }

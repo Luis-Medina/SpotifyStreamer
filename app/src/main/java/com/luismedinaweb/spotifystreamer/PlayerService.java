@@ -9,6 +9,9 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
@@ -19,6 +22,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -27,7 +31,11 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
+
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaSessionCompat.OnActiveChangeListener, AudioManager.OnAudioFocusChangeListener {
 
@@ -51,10 +59,14 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private boolean mBinded = false;
     private Thread updateUIThread = null;
     private ParcelableTrack mCurrentTrack;
+    private int mSongDuration;
     private MediaSessionCompat mMediaSession;
     private MediaControllerCompat mController;
     private RemoteControlReceiver mRemoteControlReceiver;
     private int mServiceID;
+    private Bitmap albumImageBitmap;
+    private ArrayList<ParcelableTrack> mTrackList = new ArrayList<>();
+    private int mTrackPosition;
 
     public PlayerService() {
     }
@@ -115,7 +127,13 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                                           super.onSkipToNext();
                                           Log.e("MediaPlayerService", "onSkipToNext");
                                           //Change media here
-                                          showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
+                                          if (mTrackPosition < mTrackList.size() - 1) {
+                                              Log.e("MediaPlayerService", "doSkip");
+                                              mTrackPosition++;
+                                              initMediaPlayer(mTrackList.get(mTrackPosition), false, null);
+                                              //sendUIMakeReady(mMediaPlayer.getDuration());
+                                              showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
+                                          }
                                       }
 
                                       @Override
@@ -123,7 +141,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                                           super.onSkipToPrevious();
                                           Log.e("MediaPlayerService", "onSkipToPrevious");
                                           //Change media here
-                                          showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
+                                          if (mTrackPosition > 0) {
+                                              mTrackPosition--;
+                                              initMediaPlayer(mTrackList.get(mTrackPosition), false, null);
+                                              showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
+                                          }
                                       }
 
 
@@ -132,7 +154,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                                           super.onStop();
                                           Log.e("MediaPlayerService", "onStop");
                                           //Stop media player here
-                                          startOrPausePlaying();
+                                          if (mMediaPlayer.isPlaying()) startOrPausePlaying();
                                           stopForeground(true);
                                       }
 
@@ -157,6 +179,15 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         Intent replyIntent = new Intent();
         replyIntent.setAction(PlayerFragment.RECEIVER_ACTION_UPDATE_SONG_PROGRESS);
         replyIntent.putExtra(PlayerFragment.RECEIVER_PARAM_CURRENT_POSITION, position);
+        replyIntent.putExtra(PlayerFragment.RECEIVER_PARAM_SONG_LENGTH, mSongDuration);
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(replyIntent);
+    }
+
+    private void sendUIMakeReady(int duration) {
+        Intent replyIntent = new Intent();
+        replyIntent.setAction(PlayerFragment.RECEIVER_ACTION_SET_UI_READY);
+        replyIntent.putExtra(PlayerFragment.RECEIVER_PARAM_SONG_LENGTH, duration);
+        replyIntent.putExtra(PlayerFragment.RECEIVER_PARAM_CURRENT_TRACK, mCurrentTrack);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(replyIntent);
     }
 
@@ -183,7 +214,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     public int getSongDuration() {
         if (mMediaPlayer != null) {
-            return mMediaPlayer.getDuration();
+            return mSongDuration;
         }
         return 0;
     }
@@ -221,7 +252,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         return mCurrentTrack;
     }
 
-    public void initMediaPlayer(ParcelableTrack selectedTrack, boolean fromUI) {
+    public void initMediaPlayer(ParcelableTrack selectedTrack, boolean fromUI, ArrayList<ParcelableTrack> tracks) {
         if (mMediaPlayer == null) {
             mMediaPlayer = new MediaPlayer();
             mMediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
@@ -247,19 +278,24 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mMediaPlayer.reset();
         }
         mCurrentTrack = selectedTrack;
-        if (fromUI) mBinded = true;
+        if (tracks != null && fromUI) {
+            mTrackList.clear();
+            mTrackList.addAll(tracks);
+        }
+        mTrackPosition = mTrackList.indexOf(mCurrentTrack);
+        if (fromUI) {
+            mBinded = true;
+        }
         try {
             mMediaPlayer.setDataSource(selectedTrack.preview_url);
+            //albumImageDrawable = (BitmapDrawable) albumImage;
             showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
             mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
+                    mSongDuration = mp.getDuration() / 1000;
 
-                    Intent replyIntent = new Intent();
-                    replyIntent.setAction(PlayerFragment.RECEIVER_ACTION_SET_UI_READY);
-                    replyIntent.putExtra(PlayerFragment.RECEIVER_PARAM_SONG_LENGTH, mp.getDuration());
-                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(replyIntent);
-
+                    sendUIMakeReady(mp.getDuration());
                     startOrPausePlaying();
 
 
@@ -269,7 +305,8 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mp) {
-                    updatePlayerPosition(0);
+                    mMediaPlayer.seekTo(0);
+                    updatePlayerPosition(mMediaPlayer.getCurrentPosition());
                     setPlayButton(true);
                     showNotification(buildNotification(generateAction(android.R.drawable.ic_media_play, "Play", ACTION_PLAY)));
                 }
@@ -324,23 +361,49 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
         PendingIntent enterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
                 new Intent(getApplicationContext(), PlayerActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification notification = new NotificationCompat.Builder(getApplicationContext())
+
+
+        android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setSmallIcon(R.drawable.notification)
                 .setContentTitle(mCurrentTrack.name)
                 .setContentText(mCurrentTrack.getArtistName())
                 .setContentIntent(enterIntent)
-                .setLargeIcon(null)
+                        //.setLargeIcon(null)
                 .addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", ACTION_PREVIOUS))
                 .addAction(action)
                 .addAction(generateAction(android.R.drawable.ic_media_next, "Next", ACTION_NEXT))
-                .addAction(generateAction(android.R.drawable.ic_delete, "Stop", ACTION_STOP))
-                .setStyle(new NotificationCompat.MediaStyle()
-                        .setShowActionsInCompactView(0, 1, 2)
-                        .setMediaSession(mMediaSession.getSessionToken()))
-                .build();
+                .addAction(generateAction(android.R.drawable.ic_delete, "Stop", ACTION_STOP));
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if (prefs.getBoolean(getString(R.string.pref_notifications_key), true)) {
+            builder.setStyle(new NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(0, 1, 2)
+                    .setMediaSession(mMediaSession.getSessionToken()));
+        }
 
-        return notification;
+        if (mCurrentTrack.getTrackImage() != null && mCurrentTrack.getTrackImage().url != null) {
+            Target target = new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                    albumImageBitmap = bitmap;
+                }
+
+                @Override
+                public void onBitmapFailed(Drawable errorDrawable) {
+
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                }
+
+            };
+            Picasso.with(this).load(mCurrentTrack.getTrackImage().url).into(target);
+        }
+
+        builder.setLargeIcon(albumImageBitmap);
+        return builder.build();
     }
 
     private void showNotification(Notification notification) {
