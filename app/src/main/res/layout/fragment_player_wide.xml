@@ -1,19 +1,29 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/player_horizontal_margin"
-    android:layout_marginLeft="@dimen/player_vertical_margin"
-    android:layout_marginRight="@dimen/player_vertical_margin"
-    android:layout_marginTop="@dimen/player_horizontal_margin"
-    android:orientation="vertical"
+    android:layout_height="match_parent"
+    android:layout_marginBottom="2dp"
+    android:layout_marginLeft="2dp"
+    android:layout_marginRight="2dp"
+    android:layout_marginTop="2dp"
     tools:context="com.luismedinaweb.spotifystreamer.PlayerFragment">
+
+
+    <ImageView
+        android:id="@+id/player_album_imageView"
+        android:layout_width="@dimen/player_album_image_max_dimension"
+        android:layout_height="@dimen/player_album_image_max_dimension"
+        android:layout_centerVertical="true"
+        android:contentDescription="@string/player_album_image" />
 
     <TextView
         android:id="@+id/player_artist_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="10dp"
+        android:layout_toRightOf="@id/player_album_imageView"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_artist_textview_size" />
 
@@ -21,22 +31,23 @@
         android:id="@+id/player_album_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_below="@id/player_artist_textView"
+        android:layout_marginLeft="20dp"
+        android:layout_toRightOf="@id/player_album_imageView"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_album_textview_size" />
 
-    <ImageView
-        android:id="@+id/player_album_imageView"
-        android:layout_width="@dimen/player_album_image_max_dimension"
-        android:layout_height="@dimen/player_album_image_max_dimension"
-        android:layout_gravity="center_horizontal"
-        android:contentDescription="@string/player_album_image" />
-
     <TextView
         android:id="@+id/player_track_textView"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
+        android:layout_below="@id/player_album_textView"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="50dp"
+        android:layout_toRightOf="@id/player_album_imageView"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_track_textview_size" />
 
@@ -44,12 +55,19 @@
         android:id="@+id/player_seekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/player_track_textView"
         android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/player_album_imageView"
         android:indeterminate="false" />
 
     <LinearLayout
+        android:id="@+id/timeLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/player_seekBar"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/player_album_imageView"
         android:orientation="horizontal">
 
         <TextView
@@ -75,17 +93,18 @@
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/player_seekBar"
         android:layout_gravity="center_vertical"
+        android:layout_marginLeft="20dp"
         android:layout_marginTop="10dp"
+        android:layout_toRightOf="@id/player_album_imageView"
         android:gravity="center"
         android:orientation="horizontal"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
         android:weightSum="4">
 
         <ImageButton
             android:id="@+id/player_previous_button"
-            android:layout_width="0dp"
+            android:layout_width="0dip"
             android:layout_height="@dimen/player_button_size"
             android:layout_marginRight="20dp"
             android:layout_weight="1"
@@ -94,7 +113,7 @@
 
         <ImageButton
             android:id="@+id/player_play_button"
-            android:layout_width="0dp"
+            android:layout_width="0dip"
             android:layout_height="@dimen/player_button_size"
             android:layout_marginRight="20dp"
             android:layout_weight="1"
@@ -109,7 +128,7 @@
             android:contentDescription="@string/content_description_next_track"
             android:src="@android:drawable/ic_media_next" />
     </LinearLayout>
-</LinearLayout>
+</RelativeLayout>
 
 
 

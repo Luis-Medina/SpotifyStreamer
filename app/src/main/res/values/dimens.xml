@@ -1,16 +1,14 @@
 <resources>
-    <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="thumbnail_width">80dp</dimen>
     <dimen name="thumbnail_height">60dp</dimen>
     <dimen name="artist_left_margin">20dp</dimen>
     <dimen name="searchview_vertical_padding">10dp</dimen>
-    <dimen name="player_top_margin">20dp</dimen>
-    <dimen name="player_bottom_margin">10dp</dimen>
-    <dimen name="player_album_image_margin">20dp</dimen>
-    <dimen name="player_button_size">75dp</dimen>
-    <dimen name="player_album_image_max_dimension">200dp</dimen>
+    <dimen name="player_vertical_margin">5dp</dimen>
+    <dimen name="player_horizontal_margin">20dp</dimen>
+    <dimen name="player_button_size">60dp</dimen>
+    <dimen name="player_album_image_max_dimension">270dp</dimen>
     <dimen name="player_artist_textview_size">22sp</dimen>
     <dimen name="player_track_textview_size">22sp</dimen>
     <dimen name="player_album_textview_size">18sp</dimen>

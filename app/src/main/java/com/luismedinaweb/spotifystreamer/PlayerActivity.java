@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -38,6 +40,14 @@ public class PlayerActivity extends ActionBarActivity {
                     .add(R.id.player_container, fragment)
                     .commit();
         }
+
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getWindow().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+
+        int height = displaymetrics.heightPixels;
+        int width = displaymetrics.widthPixels;
+        Log.e("MEASUREMENTS", "HEIGHT: " + height + "    WIDTH: " + width);
+
     }
 
     @Override

@@ -1,8 +1,15 @@
-<?xml version="1.0" encoding="utf-8"  ?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="player_album_image_max_dimension">100dp</dimen>
-    <dimen name="player_artist_textview_size">18sp</dimen>
-    <dimen name="player_track_textview_size">18sp</dimen>
-    <dimen name="player_album_textview_size">14sp</dimen>
+
+    <dimen name="player_album_image_max_dimension">180dp</dimen>
+    <dimen name="player_vertical_margin">70dp</dimen>
+    <dimen name="player_horizontal_margin">5dp</dimen>
+
+    <dimen name="player_button_size">55dp</dimen>
+
+    <dimen name="player_artist_textview_size">26sp</dimen>
+    <dimen name="player_track_textview_size">22sp</dimen>
+    <dimen name="player_album_textview_size">18sp</dimen>
     <dimen name="player_time_textview_size">14sp</dimen>
+
 </resources>

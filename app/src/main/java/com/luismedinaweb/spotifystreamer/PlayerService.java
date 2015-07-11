@@ -16,10 +16,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
@@ -37,7 +34,7 @@ import com.squareup.picasso.Target;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class PlayerService extends Service implements MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener, MediaSessionCompat.OnActiveChangeListener, AudioManager.OnAudioFocusChangeListener {
+public class PlayerService extends Service implements MediaSessionCompat.OnActiveChangeListener, AudioManager.OnAudioFocusChangeListener {
 
     public static final String INCOMING_TRACK_URL = "incomingTrackURL";
     public static final String ACTION_PLAY = "action_play";
@@ -48,15 +45,11 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     public static final String ACTION_PREVIOUS = "action_previous";
     public static final String ACTION_STOP = "action_stop";
     public static final String ACTION_CHECK_RUNNING = "action_check_running";
+    public static final String PARAM_SHOW_PLAYER_DIALOG = "showPlayerDialog";
     private static boolean isStarted;
     // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
     private MediaPlayer mMediaPlayer;
-    private Looper mServiceLooper;
-    private ServiceHandler mServiceHandler;
-    private String mCurrentTrackUrl;
-    private Handler mHandler = new Handler();
-    private boolean mBinded = false;
     private Thread updateUIThread = null;
     private ParcelableTrack mCurrentTrack;
     private int mSongDuration;
@@ -67,6 +60,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     private Bitmap albumImageBitmap;
     private ArrayList<ParcelableTrack> mTrackList = new ArrayList<>();
     private int mTrackPosition;
+    private PendingIntent mEnterIntent;
 
     public PlayerService() {
     }
@@ -283,9 +277,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
             mTrackList.addAll(tracks);
         }
         mTrackPosition = mTrackList.indexOf(mCurrentTrack);
-        if (fromUI) {
-            mBinded = true;
-        }
         try {
             mMediaPlayer.setDataSource(selectedTrack.preview_url);
             //albumImageDrawable = (BitmapDrawable) albumImage;
@@ -316,6 +307,17 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 @Override
                 public void onSeekComplete(MediaPlayer mp) {
 
+                }
+            });
+
+            mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+                @Override
+                public boolean onError(MediaPlayer mp, int what, int extra) {
+                    switch (what) {
+                        case MediaPlayer.MEDIA_ERROR_IO:
+                            Toast.makeText(getApplicationContext(), "Spotify Streamer: I/O error", Toast.LENGTH_LONG).show();
+                    }
+                    return true;
                 }
             });
 
@@ -358,9 +360,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
     }
 
     private Notification buildNotification(NotificationCompat.Action action) {
-        PendingIntent enterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), PlayerActivity.class),
-                PendingIntent.FLAG_UPDATE_CURRENT);
 
 
         android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
@@ -368,7 +367,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                 .setSmallIcon(R.drawable.notification)
                 .setContentTitle(mCurrentTrack.name)
                 .setContentText(mCurrentTrack.getArtistName())
-                .setContentIntent(enterIntent)
+                .setContentIntent(mEnterIntent)
                         //.setLargeIcon(null)
                 .addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", ACTION_PREVIOUS))
                 .addAction(action)
@@ -413,6 +412,19 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        //TODO: Make MainActivity show Dialog with current track in 2 pane mode
+        if (intent.getBooleanExtra(PlayerFragment.PARAM_IS_TWO_PANE, true)) {
+            Intent mainActivityIntent = new Intent(getApplicationContext(), MainActivity.class);
+            mainActivityIntent.putExtra(PARAM_SHOW_PLAYER_DIALOG, true);
+            mEnterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                    mainActivityIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+        } else {
+            mEnterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                    new Intent(getApplicationContext(), PlayerActivity.class),
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+
         mServiceID = startId;
         if (!isStarted()) {
             startForeground(1, buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
@@ -426,7 +438,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public void onDestroy() {
-        Toast.makeText(this, "service destroying", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "service destroying", Toast.LENGTH_SHORT).show();
         if (mMediaPlayer != null) mMediaPlayer.release();
         if (mMediaSession != null) mMediaSession.release();
         super.onDestroy();
@@ -434,31 +446,17 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        mBinded = true;
         return mBinder;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        mBinded = false;
         return super.onUnbind(intent);
     }
 
     @Override
     public void onRebind(Intent intent) {
-        mBinded = true;
         super.onRebind(intent);
-    }
-
-    @Override
-    public boolean onError(MediaPlayer mp, int what, int extra) {
-        return false;
-    }
-
-    @Override
-    public void onPrepared(MediaPlayer mp) {
-
     }
 
     @Override
@@ -471,6 +469,7 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
 
     }
 
+    //TODO: Check functionality when hitting play/pause constantly
     private final class UpdateUIRunnable implements Runnable {
 
         @Override
@@ -489,18 +488,6 @@ public class PlayerService extends Service implements MediaPlayer.OnPreparedList
                     }
                 }
             }
-        }
-    }
-
-    // Handler that receives messages from the thread
-    private final class ServiceHandler extends Handler {
-        public ServiceHandler(Looper looper) {
-            super(looper);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-
         }
     }
 

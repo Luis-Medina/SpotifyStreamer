@@ -16,4 +16,7 @@
     <string name="placeholder_text">Some text</string>
     <string name="player_album_image">player_album_image</string>
     <string name="menu_item_now_playing">Now Playing</string>
+    <string name="content_description_previous_track">Previous Track</string>
+    <string name="content_description_next_track">Next Track</string>
+    <string name="content_description_play_track">Play/Pause</string>
 </resources>

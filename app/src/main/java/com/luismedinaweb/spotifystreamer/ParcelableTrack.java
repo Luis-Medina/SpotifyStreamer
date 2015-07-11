@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import kaaes.spotify.webapi.android.models.AlbumSimple;
 import kaaes.spotify.webapi.android.models.ArtistSimple;
@@ -28,6 +29,7 @@ public class ParcelableTrack extends Track implements Parcelable{
     private ParcelableImage trackImage;
     private String albumName;
     private String artistName;
+    private String externalURL;
 
     public ParcelableTrack(Parcel in){
         name = in.readString();
@@ -35,6 +37,7 @@ public class ParcelableTrack extends Track implements Parcelable{
         trackImage = in.readParcelable(ParcelableImage.class.getClassLoader());
         artistName = in.readString();
         preview_url = in.readString();
+        externalURL = in.readString();
     }
 
     public ParcelableTrack(Track track){
@@ -45,6 +48,9 @@ public class ParcelableTrack extends Track implements Parcelable{
         if(track.album.images.size() > 0){
             Image albumImage = track.album.images.get(0);
             trackImage = new ParcelableImage(albumImage.height, albumImage.width, albumImage.url);
+        }
+        if (track.external_urls.size() > 0) {
+            externalURL = track.external_urls.get("spotify");
         }
     }
 
@@ -60,6 +66,7 @@ public class ParcelableTrack extends Track implements Parcelable{
         dest.writeParcelable(trackImage, flags);
         dest.writeString(artistName);
         dest.writeString(preview_url);
+        dest.writeString(externalURL);
     }
 
     public Track getSpotifyTrack(){
@@ -74,6 +81,10 @@ public class ParcelableTrack extends Track implements Parcelable{
         toReturn.artists.add(artist);
         toReturn.preview_url = preview_url;
         if(trackImage != null) toReturn.album.images.add(trackImage);
+        if (externalURL != null) {
+            if (toReturn.external_urls == null) toReturn.external_urls = new HashMap<>();
+            toReturn.external_urls.put("spotify", externalURL);
+        }
         return toReturn;
     }
 
@@ -87,5 +98,9 @@ public class ParcelableTrack extends Track implements Parcelable{
 
     public String getAlbumName() {
         return albumName;
+    }
+
+    public String getExternalURL() {
+        return externalURL;
     }
 }

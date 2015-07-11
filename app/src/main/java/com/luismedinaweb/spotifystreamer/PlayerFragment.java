@@ -15,7 +15,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -58,6 +57,9 @@ public class PlayerFragment extends DialogFragment {
     public static final String RECEIVER_PARAM_PLAY_ICON = "playIcon";
     public static final String RECEIVER_PARAM_CURRENT_POSITION = "currentPosition";
     public static final String RECEIVER_PARAM_CURRENT_TRACK = "currentTrack";
+    public static final String PARAM_IS_TWO_PANE = "isTwoPane";
+    private static final String SAVED_KEY_CURRENT_PROGRESS = "trackCurrentProgress";
+    private static final String SAVED_KEY_MAX_PROGRESS = "trackMaxProgress";
     private static final String LOG_TAG = PlayerFragment.class.getSimpleName();
     private final IntentFilter broadcastReceiverIntent = new IntentFilter();
     boolean mBound = false;
@@ -82,12 +84,12 @@ public class PlayerFragment extends DialogFragment {
     ImageButton previousButton;
     @Bind(R.id.player_seekBar)
     SeekBar seekBar;
+    private boolean mTwoPane = false;
     private int mSelectedTrackPosition;
     private ParcelableTrack mSelectedTrack;
     private ArrayList<ParcelableTrack> mTrackList;
     private LocalBroadcastManager bManager;
     private ServiceUpdateReceiver serviceUpdateReceiver = new ServiceUpdateReceiver();
-    private boolean mInfoFromService = false;
     private ShareActionProvider mShareActionProvider;
 
     //private OnFragmentInteractionListener mListener;
@@ -113,7 +115,7 @@ public class PlayerFragment extends DialogFragment {
                 mService.initMediaPlayer(mSelectedTrack, true, mTrackList);
             }
 
-            getActivity().startService(new Intent(getActivity(), PlayerService.class));
+            startPlayerService(null);
         }
 
         @Override
@@ -132,7 +134,6 @@ public class PlayerFragment extends DialogFragment {
      *
      * @return A new instance of fragment PlayerFragment.
      */
-    // TODO: Rename and change types and number of parameters
     public static PlayerFragment newInstance(ArrayList<ParcelableTrack> tracks, int selectedPosition) {
         PlayerFragment fragment = new PlayerFragment();
         Bundle args = new Bundle();
@@ -145,6 +146,7 @@ public class PlayerFragment extends DialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         getActivity().setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
@@ -222,18 +224,23 @@ public class PlayerFragment extends DialogFragment {
         }
     }
 
+    //TODO: Not Working!!! Make same as play/pause
     @OnClick(R.id.player_previous_button)
     public void onPreviousPressed() {
-        Intent intent = new Intent(getActivity(), PlayerService.class);
-        intent.setAction(PlayerService.ACTION_PREVIOUS);
-        getActivity().startService(intent);
+        startPlayerService(PlayerService.ACTION_PREVIOUS);
     }
 
+    //TODO: Not Working!!! Make same as play/pause
     @OnClick(R.id.player_next_button)
     public void onNextPressed() {
+        startPlayerService(PlayerService.ACTION_NEXT);
+    }
+
+    private void startPlayerService(String action) {
         Intent intent = new Intent(getActivity(), PlayerService.class);
-        intent.setAction(PlayerService.ACTION_NEXT);
-        getActivity().startService(intent);
+        intent.putExtra(PARAM_IS_TWO_PANE, mTwoPane);
+        if (action != null) intent.setAction(action);
+        getActivity().startService(new Intent(getActivity(), PlayerService.class));
     }
 
     private void initializeBroadcastReceiver() {
@@ -253,23 +260,25 @@ public class PlayerFragment extends DialogFragment {
     public void onStart() {
         super.onStart();
 
-        //Resize dialog when in two pane mode
-        if (getDialog() != null) {
-            DisplayMetrics displaymetrics = new DisplayMetrics();
-            getDialog().getWindow().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
-
-            int height = displaymetrics.heightPixels;
-            int width = displaymetrics.widthPixels;
-            if (width < height) {
-                width = (int) (width * 0.9);
-                height = (int) (height * 0.7);
-            } else {
-                width = (int) (width * 0.7);
-                height = (int) (height * 0.9);
-            }
-
-            getDialog().getWindow().setLayout(width, height);
-        }
+//        //Resize dialog when in two pane mode
+//        if (getDialog() != null) {
+//            DisplayMetrics displaymetrics = new DisplayMetrics();
+//            getDialog().getWindow().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+//
+//            int height = displaymetrics.heightPixels;
+//            int width = displaymetrics.widthPixels;
+//            if (width < height) {
+//                width = (int) (width * 0.7);
+//                height = (int) (height * 0.6);
+//            } else {
+//                width = (int) (width * 0.5);
+//                height = (int) (height * 0.96);
+//            }
+//
+//            Log.e("MEASUREMENTS", "HEIGHT: " + height + "    WIDTH: " + width);
+//
+//            getDialog().getWindow().setLayout(width, height);
+//        }
 
         enableMediaControls(false);
 
@@ -293,12 +302,14 @@ public class PlayerFragment extends DialogFragment {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        //shareIntent.putExtra(Intent.EXTRA_ORIGINATING_URI, mForecast + FORECAST_SHARE_HASHTAG);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mSelectedTrack.getExternalURL());
         return shareIntent;
     }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
+        outState.putInt(SAVED_KEY_CURRENT_PROGRESS, seekBar.getProgress());
+        outState.putInt(SAVED_KEY_MAX_PROGRESS, seekBar.getMax());
         super.onSaveInstanceState(outState);
     }
 
@@ -348,7 +359,6 @@ public class PlayerFragment extends DialogFragment {
 
         mShareActionProvider.setShareIntent(createShareTrackIntent());
 
-        super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
@@ -357,6 +367,10 @@ public class PlayerFragment extends DialogFragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_player, container, false);
         ButterKnife.bind(this, view);
+        if (savedInstanceState != null) {
+            seekBar.setMax(savedInstanceState.getInt(SAVED_KEY_MAX_PROGRESS));
+            seekBar.setProgress(savedInstanceState.getInt(SAVED_KEY_CURRENT_PROGRESS));
+        }
         return view;
     }
 
@@ -402,7 +416,6 @@ public class PlayerFragment extends DialogFragment {
         }
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
 //    public void onButtonPressed(Uri uri) {
 //        if (mListener != null) {
 //            mListener.onFragmentInteraction(uri);
@@ -437,7 +450,7 @@ public class PlayerFragment extends DialogFragment {
      * >Communicating with Other Fragments</a> for more information.
      */
 //    public interface OnFragmentInteractionListener {
-//        // TODO: Update argument type and name
+//
 //        public void onFragmentInteraction(Uri uri);
 //    }
 
