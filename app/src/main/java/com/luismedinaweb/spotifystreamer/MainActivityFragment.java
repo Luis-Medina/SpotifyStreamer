@@ -12,6 +12,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.luismedinaweb.spotifystreamer.models.ParcelableArtist;
+
 import java.util.ArrayList;
 
 import kaaes.spotify.webapi.android.SpotifyApi;

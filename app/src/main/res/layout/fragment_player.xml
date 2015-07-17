@@ -15,7 +15,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:text="@string/placeholder_text"
-        android:textSize="@dimen/player_artist_textview_size" />
+        android:textSize="@dimen/player_artist_textview_size"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/player_album_textView"

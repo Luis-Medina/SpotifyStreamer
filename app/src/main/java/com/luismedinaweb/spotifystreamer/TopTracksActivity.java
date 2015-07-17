@@ -9,6 +9,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.luismedinaweb.spotifystreamer.models.ParcelableTrack;
+
 import java.util.ArrayList;
 
 

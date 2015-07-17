@@ -28,6 +28,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.luismedinaweb.spotifystreamer.models.ParcelableImage;
+import com.luismedinaweb.spotifystreamer.models.ParcelableTrack;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -91,6 +93,7 @@ public class PlayerFragment extends DialogFragment {
     private LocalBroadcastManager bManager;
     private ServiceUpdateReceiver serviceUpdateReceiver = new ServiceUpdateReceiver();
     private ShareActionProvider mShareActionProvider;
+    private boolean mIsPlaying = false;
 
     //private OnFragmentInteractionListener mListener;
     /**
@@ -116,6 +119,11 @@ public class PlayerFragment extends DialogFragment {
             }
 
             startPlayerService(null);
+
+//            if(mService.isPlaying()){
+//                startPlayerService(PlayerService.ACTION_PAUSE);
+//            }
+
         }
 
         @Override
@@ -216,12 +224,17 @@ public class PlayerFragment extends DialogFragment {
 
     @OnClick(R.id.player_play_button)
     public void onPlayPressed() {
-        if (mBound) {
-//            if (!mService.isStarted()) {
-//                getActivity().startService(new Intent(getActivity(), PlayerService.class));
-//            }
-            mService.play();
+        if (mIsPlaying) {
+            startPlayerService(PlayerService.ACTION_PAUSE);
+        } else {
+            startPlayerService(PlayerService.ACTION_PLAY);
         }
+//        if (mBound) {
+////            if (!mService.isStarted()) {
+////                getActivity().startService(new Intent(getActivity(), PlayerService.class));
+////            }
+//            mService.play();
+//        }
     }
 
     //TODO: Not Working!!! Make same as play/pause
@@ -240,7 +253,7 @@ public class PlayerFragment extends DialogFragment {
         Intent intent = new Intent(getActivity(), PlayerService.class);
         intent.putExtra(PARAM_IS_TWO_PANE, mTwoPane);
         if (action != null) intent.setAction(action);
-        getActivity().startService(new Intent(getActivity(), PlayerService.class));
+        getActivity().startService(intent);
     }
 
     private void initializeBroadcastReceiver() {
@@ -405,11 +418,11 @@ public class PlayerFragment extends DialogFragment {
                 seekBar.setProgress((int) mCurrentPosition);
 
             } else if (intent.getAction().equals(RECEIVER_ACTION_SET_PLAY_BUTTON)) {
-                boolean setToPlay = intent.getExtras().getBoolean(RECEIVER_PARAM_PLAY_ICON);
-                if (setToPlay) {
-                    playButton.setImageResource(android.R.drawable.ic_media_play);
-                } else {
+                mIsPlaying = !intent.getExtras().getBoolean(RECEIVER_PARAM_PLAY_ICON);
+                if (mIsPlaying) {
                     playButton.setImageResource(android.R.drawable.ic_media_pause);
+                } else {
+                    playButton.setImageResource(android.R.drawable.ic_media_play);
                 }
             }
 

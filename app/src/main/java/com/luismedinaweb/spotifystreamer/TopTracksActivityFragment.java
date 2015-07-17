@@ -12,6 +12,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.luismedinaweb.spotifystreamer.models.ParcelableTrack;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;

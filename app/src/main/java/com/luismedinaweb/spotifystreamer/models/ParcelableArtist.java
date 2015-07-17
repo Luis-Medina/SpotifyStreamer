@@ -1,4 +1,4 @@
-package com.luismedinaweb.spotifystreamer;
+package com.luismedinaweb.spotifystreamer.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -13,19 +13,17 @@ import kaaes.spotify.webapi.android.models.Image;
  */
 public class ParcelableArtist extends Artist implements Parcelable{
 
+    // this is used to regenerate your object. All Parcelables must have a CREATOR that implements these two methods
+    public static final Parcelable.Creator<ParcelableArtist> CREATOR = new Parcelable.Creator<ParcelableArtist>() {
+        public ParcelableArtist createFromParcel(Parcel in) {
+            return new ParcelableArtist(in);
+        }
+
+        public ParcelableArtist[] newArray(int size) {
+            return new ParcelableArtist[size];
+        }
+    };
     private ParcelableImage artistImage;
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(name);
-        dest.writeString(id);
-        dest.writeParcelable(artistImage, flags);
-    }
 
     public ParcelableArtist(Parcel in){
         name = in.readString();
@@ -42,6 +40,18 @@ public class ParcelableArtist extends Artist implements Parcelable{
         }
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(name);
+        dest.writeString(id);
+        dest.writeParcelable(artistImage, flags);
+    }
+
     public Artist getSpotifyArtist(){
         Artist toReturn = new Artist();
         toReturn.name = name;
@@ -50,17 +60,6 @@ public class ParcelableArtist extends Artist implements Parcelable{
         if(artistImage != null) toReturn.images.add(artistImage);
         return toReturn;
     }
-
-    // this is used to regenerate your object. All Parcelables must have a CREATOR that implements these two methods
-    public static final Parcelable.Creator<ParcelableArtist> CREATOR = new Parcelable.Creator<ParcelableArtist>() {
-        public ParcelableArtist createFromParcel(Parcel in) {
-            return new ParcelableArtist(in);
-        }
-
-        public ParcelableArtist[] newArray(int size) {
-            return new ParcelableArtist[size];
-        }
-    };
 
 
 }

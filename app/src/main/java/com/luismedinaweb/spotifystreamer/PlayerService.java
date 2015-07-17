@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
+import com.luismedinaweb.spotifystreamer.models.ParcelableTrack;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
@@ -67,6 +68,10 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
     public static synchronized boolean isStarted() {
         return isStarted;
+    }
+
+    public static synchronized void setIsStarted(boolean started) {
+        isStarted = started;
     }
 
     @Override
@@ -150,6 +155,7 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                           //Stop media player here
                                           if (mMediaPlayer.isPlaying()) startOrPausePlaying();
                                           stopForeground(true);
+                                          setIsStarted(false);
                                       }
 
                                       @Override
@@ -213,6 +219,10 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
         return 0;
     }
 
+    public boolean isPlaying() {
+        return mMediaPlayer.isPlaying();
+    }
+
     public void play() {
         if (mMediaPlayer != null) {
             if (mMediaPlayer.isPlaying()) {
@@ -225,11 +235,12 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
     private void startOrPausePlaying() {
         if (mMediaPlayer != null) {
-            if (updateUIThread != null) {
-                updateUIThread.interrupt();
-            }
             if (mMediaPlayer.isPlaying()) {
                 mMediaPlayer.pause();
+                if (updateUIThread != null) {
+                    updateUIThread.interrupt();
+                    updatePlayerPosition(mMediaPlayer.getCurrentPosition());
+                }
                 setPlayButton(true);
             } else {
                 if (requestAudioFocus()) {
@@ -428,10 +439,9 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
         mServiceID = startId;
         if (!isStarted()) {
             startForeground(1, buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
-            isStarted = true;
-        } else {
-            handleIntent(intent);
+            setIsStarted(true);
         }
+        handleIntent(intent);
 
         return START_STICKY;
     }
@@ -469,7 +479,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
     }
 
-    //TODO: Check functionality when hitting play/pause constantly
     private final class UpdateUIRunnable implements Runnable {
 
         @Override

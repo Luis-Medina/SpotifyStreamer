@@ -6,7 +6,7 @@
     <dimen name="artist_left_margin">20dp</dimen>
     <dimen name="searchview_vertical_padding">10dp</dimen>
     <dimen name="player_vertical_margin">5dp</dimen>
-    <dimen name="player_horizontal_margin">20dp</dimen>
+    <dimen name="player_horizontal_margin">5dp</dimen>
     <dimen name="player_button_size">60dp</dimen>
     <dimen name="player_album_image_max_dimension">270dp</dimen>
     <dimen name="player_artist_textview_size">22sp</dimen>
