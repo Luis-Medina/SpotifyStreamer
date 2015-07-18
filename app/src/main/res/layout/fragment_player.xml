@@ -2,11 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="@dimen/player_horizontal_margin"
-    android:layout_marginLeft="@dimen/player_vertical_margin"
-    android:layout_marginRight="@dimen/player_vertical_margin"
-    android:layout_marginTop="@dimen/player_horizontal_margin"
     android:orientation="vertical"
+    android:paddingBottom="@dimen/player_horizontal_margin"
+    android:paddingLeft="@dimen/player_vertical_margin"
+    android:paddingRight="@dimen/player_vertical_margin"
+
+    android:paddingTop="@dimen/player_horizontal_margin"
     tools:context="com.luismedinaweb.spotifystreamer.PlayerFragment">
 
     <TextView
@@ -14,6 +15,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_artist_textview_size"
         android:textStyle="bold" />
@@ -23,6 +26,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_album_textview_size" />
 
@@ -30,7 +35,8 @@
         android:id="@+id/player_album_imageView"
         android:layout_width="@dimen/player_album_image_max_dimension"
         android:layout_height="@dimen/player_album_image_max_dimension"
-        android:layout_gravity="center_horizontal"
+        android:layout_gravity="center"
+        android:layout_margin="10dp"
         android:contentDescription="@string/player_album_image" />
 
     <TextView
@@ -38,6 +44,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:gravity="center"
+        android:maxLines="2"
         android:text="@string/placeholder_text"
         android:textSize="@dimen/player_track_textview_size" />
 

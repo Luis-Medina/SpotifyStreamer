@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="fragment_player" type="layout">@layout/fragment_player_wide</item>
+
+    <item name="the_player_fragment" type="layout">@layout/fragment_player_wide</item>
+
 </resources>

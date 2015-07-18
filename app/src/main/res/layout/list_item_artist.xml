@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="?attr/listPreferredItemHeightLarge"
+    android:orientation="horizontal"
     android:paddingBottom="@dimen/abc_dialog_list_padding_vertical_material"
     android:paddingLeft="@dimen/abc_list_item_padding_horizontal_material"
     android:paddingRight="@dimen/abc_list_item_padding_horizontal_material"
@@ -12,17 +12,19 @@
         android:id="@+id/artist_imageview"
         android:layout_width="@dimen/thumbnail_width"
         android:layout_height="@dimen/thumbnail_width"
+        android:layout_gravity="center"
+        android:contentDescription="@string/artist_image_description"
         android:scaleType="fitCenter"
-        android:src="@drawable/placeholder"
-        android:contentDescription="@string/artist_image_description" />
+        android:src="@drawable/placeholder" />
 
     <TextView
+        android:id="@+id/artist_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/artist_name_placeholder"
-        android:id="@+id/artist_textview"
-        android:layout_marginLeft="@dimen/artist_left_margin"
         android:layout_gravity="center_vertical"
-        android:maxLines="3"/>
+        android:layout_marginLeft="@dimen/artist_left_margin"
+        android:maxLines="3"
+        android:text="@string/artist_name_placeholder"
+        android:textSize="@dimen/list_artist_textview_size" />
 
 </LinearLayout>

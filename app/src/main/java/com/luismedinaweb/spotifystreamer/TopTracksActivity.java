@@ -91,14 +91,35 @@ public class TopTracksActivity extends ActionBarActivity implements TopTracksAct
             NavUtils.navigateUpFromSameTask(this);
             return true;
         }
+        if (id == MENU_ITEM_NOW_PLAYING) {
+            if (mTwoPane) {
+                showPlayerDialogIfNeeded();
+            } else {
+                startActivity(new Intent(this, PlayerActivity.class));
+            }
+            return true;
+        }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showPlayerDialogIfNeeded() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        PlayerFragment theFragment = (PlayerFragment) fragmentManager.findFragmentByTag(PLAYERFRAGMENT_TAG);
+        if (theFragment == null) {
+            PlayerFragment fragment = PlayerFragment.newInstance(null, -1, mTwoPane);
+            // In two-pane mode, show the detail view in this activity by
+            // adding or replacing the detail fragment using a
+            // fragment transaction.
+            fragment.show(fragmentManager, PLAYERFRAGMENT_TAG);
+
+        }
     }
 
     @Override
     public void onItemSelected(ArrayList<ParcelableTrack> tracks, int selectedTrack) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        PlayerFragment fragment = PlayerFragment.newInstance(tracks, selectedTrack);
+        PlayerFragment fragment = PlayerFragment.newInstance(tracks, selectedTrack, mTwoPane);
         if (mTwoPane) {
             // In two-pane mode, show the detail view in this activity by
             // adding or replacing the detail fragment using a

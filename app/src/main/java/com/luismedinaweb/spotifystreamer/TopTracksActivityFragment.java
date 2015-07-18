@@ -46,6 +46,7 @@ public class TopTracksActivityFragment extends Fragment {
     public TopTracksActivityFragment() {
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {

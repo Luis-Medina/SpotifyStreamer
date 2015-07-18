@@ -1,10 +1,15 @@
 <resources>
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
-    <dimen name="thumbnail_width">80dp</dimen>
+    <dimen name="thumbnail_width">60dp</dimen>
     <dimen name="thumbnail_height">60dp</dimen>
-    <dimen name="artist_left_margin">20dp</dimen>
+    <dimen name="artist_left_margin">10dp</dimen>
     <dimen name="searchview_vertical_padding">10dp</dimen>
+
+    <dimen name="list_artist_textview_size">14sp</dimen>
+    <dimen name="list_album_textview_size">12sp</dimen>
+    <dimen name="list_track_textview_size">14sp</dimen>
+
     <dimen name="player_vertical_margin">5dp</dimen>
     <dimen name="player_horizontal_margin">5dp</dimen>
     <dimen name="player_button_size">60dp</dimen>
@@ -13,4 +18,5 @@
     <dimen name="player_track_textview_size">22sp</dimen>
     <dimen name="player_album_textview_size">18sp</dimen>
     <dimen name="player_time_textview_size">18sp</dimen>
+    <dimen name="buttons_margin_top">10dp</dimen>
 </resources>

@@ -24,7 +24,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.NotificationCompat;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
@@ -47,6 +46,9 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
     public static final String ACTION_STOP = "action_stop";
     public static final String ACTION_CHECK_RUNNING = "action_check_running";
     public static final String PARAM_SHOW_PLAYER_DIALOG = "showPlayerDialog";
+    public static final String PARAM_CURRENT_TRACK_POSITION = "currentTrackPosition";
+    public static final String PARAM_TRACK_LIST = "trackList";
+    private static final String LOG_TAG = PlayerService.class.getSimpleName();
     private static boolean isStarted;
     // Binder given to clients
     private final IBinder mBinder = new LocalBinder();
@@ -61,7 +63,8 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
     private Bitmap albumImageBitmap;
     private ArrayList<ParcelableTrack> mTrackList = new ArrayList<>();
     private int mTrackPosition;
-    private PendingIntent mEnterIntent;
+    //private PendingIntent mEnterIntent;
+    private boolean mTwoPane;
 
     public PlayerService() {
     }
@@ -108,7 +111,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                       @Override
                                       public void onPlay() {
                                           super.onPlay();
-                                          Log.e("MediaPlayerService", "onPlay");
                                           showNotification(buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
                                           startOrPausePlaying();
                                       }
@@ -116,7 +118,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                       @Override
                                       public void onPause() {
                                           super.onPause();
-                                          Log.e("MediaPlayerService", "onPause");
                                           showNotification(buildNotification(generateAction(android.R.drawable.ic_media_play, "Play", ACTION_PLAY)));
                                           startOrPausePlaying();
                                       }
@@ -124,10 +125,8 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                       @Override
                                       public void onSkipToNext() {
                                           super.onSkipToNext();
-                                          Log.e("MediaPlayerService", "onSkipToNext");
                                           //Change media here
                                           if (mTrackPosition < mTrackList.size() - 1) {
-                                              Log.e("MediaPlayerService", "doSkip");
                                               mTrackPosition++;
                                               initMediaPlayer(mTrackList.get(mTrackPosition), false, null);
                                               //sendUIMakeReady(mMediaPlayer.getDuration());
@@ -138,7 +137,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                       @Override
                                       public void onSkipToPrevious() {
                                           super.onSkipToPrevious();
-                                          Log.e("MediaPlayerService", "onSkipToPrevious");
                                           //Change media here
                                           if (mTrackPosition > 0) {
                                               mTrackPosition--;
@@ -151,11 +149,13 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                       @Override
                                       public void onStop() {
                                           super.onStop();
-                                          Log.e("MediaPlayerService", "onStop");
                                           //Stop media player here
                                           if (mMediaPlayer.isPlaying()) startOrPausePlaying();
                                           stopForeground(true);
                                           setIsStarted(false);
+                                          mMediaSession.release();
+                                          mMediaPlayer.release();
+                                          stopSelf();
                                       }
 
                                       @Override
@@ -371,14 +371,12 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
     }
 
     private Notification buildNotification(NotificationCompat.Action action) {
-
-
         android.support.v4.app.NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
                 .setSmallIcon(R.drawable.notification)
                 .setContentTitle(mCurrentTrack.name)
                 .setContentText(mCurrentTrack.getArtistName())
-                .setContentIntent(mEnterIntent)
+                .setContentIntent(generateEnterIntent())
                         //.setLargeIcon(null)
                 .addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", ACTION_PREVIOUS))
                 .addAction(action)
@@ -416,6 +414,22 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
         return builder.build();
     }
 
+    private PendingIntent generateEnterIntent() {
+        PendingIntent enterIntent;
+        if (mTwoPane) {
+            Intent mainActivityIntent = new Intent(getApplicationContext(), MainActivity.class);
+            mainActivityIntent.putExtra(PARAM_SHOW_PLAYER_DIALOG, true);
+            enterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                    mainActivityIntent,
+                    PendingIntent.FLAG_CANCEL_CURRENT);
+        } else {
+            enterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                    new Intent(getApplicationContext(), PlayerActivity.class),
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        return enterIntent;
+    }
+
     private void showNotification(Notification notification) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(1, notification);
@@ -423,17 +437,8 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        //TODO: Make MainActivity show Dialog with current track in 2 pane mode
-        if (intent.getBooleanExtra(PlayerFragment.PARAM_IS_TWO_PANE, true)) {
-            Intent mainActivityIntent = new Intent(getApplicationContext(), MainActivity.class);
-            mainActivityIntent.putExtra(PARAM_SHOW_PLAYER_DIALOG, true);
-            mEnterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                    mainActivityIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-        } else {
-            mEnterIntent = PendingIntent.getActivity(getApplicationContext(), 0,
-                    new Intent(getApplicationContext(), PlayerActivity.class),
-                    PendingIntent.FLAG_UPDATE_CURRENT);
+        if (intent.hasExtra(PlayerFragment.PARAM_IS_TWO_PANE)) {
+            mTwoPane = intent.getBooleanExtra(PlayerFragment.PARAM_IS_TWO_PANE, false);
         }
 
         mServiceID = startId;
@@ -448,7 +453,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
     @Override
     public void onDestroy() {
-        Toast.makeText(getApplicationContext(), "service destroying", Toast.LENGTH_SHORT).show();
         if (mMediaPlayer != null) mMediaPlayer.release();
         if (mMediaSession != null) mMediaSession.release();
         super.onDestroy();

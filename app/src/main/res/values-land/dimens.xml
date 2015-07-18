@@ -4,6 +4,7 @@
     <dimen name="player_album_image_max_dimension">180dp</dimen>
     <dimen name="player_vertical_margin">70dp</dimen>
     <dimen name="player_horizontal_margin">5dp</dimen>
+    <dimen name="player_fragment_width">600dp</dimen>
 
     <dimen name="player_button_size">55dp</dimen>
 
