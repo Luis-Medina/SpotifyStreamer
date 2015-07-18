@@ -11,12 +11,12 @@
     <dimen name="list_track_textview_size">14sp</dimen>
 
     <dimen name="player_vertical_margin">5dp</dimen>
-    <dimen name="player_horizontal_margin">5dp</dimen>
+    <dimen name="player_horizontal_margin">2dp</dimen>
     <dimen name="player_button_size">60dp</dimen>
     <dimen name="player_album_image_max_dimension">270dp</dimen>
-    <dimen name="player_artist_textview_size">22sp</dimen>
-    <dimen name="player_track_textview_size">22sp</dimen>
-    <dimen name="player_album_textview_size">18sp</dimen>
-    <dimen name="player_time_textview_size">18sp</dimen>
+    <dimen name="player_artist_textview_size">18sp</dimen>
+    <dimen name="player_track_textview_size">16sp</dimen>
+    <dimen name="player_album_textview_size">14sp</dimen>
+    <dimen name="player_time_textview_size">14sp</dimen>
     <dimen name="buttons_margin_top">10dp</dimen>
 </resources>

@@ -225,14 +225,12 @@ public class PlayerFragment extends DialogFragment {
         }
     }
 
-    //TODO: Not Working!!! Make same as play/pause
     @OnClick(R.id.player_previous_button)
     public void onPreviousPressed() {
         enableMediaControls(false);
         startPlayerService(PlayerService.ACTION_PREVIOUS);
     }
 
-    //TODO: Not Working!!! Make same as play/pause
     @OnClick(R.id.player_next_button)
     public void onNextPressed() {
         enableMediaControls(false);
@@ -242,7 +240,11 @@ public class PlayerFragment extends DialogFragment {
     private void startPlayerService(String action) {
         Intent intent = new Intent(getActivity(), PlayerService.class);
         intent.putExtra(PARAM_IS_TWO_PANE, mTwoPane);
-        if (action != null) intent.setAction(action);
+        if (action != null) {
+            intent.setAction(action);
+            intent.putExtra(PlayerService.PARAM_CURRENT_TRACK, mSelectedTrack);
+            intent.putExtra(PlayerService.PARAM_TRACK_LIST, mTrackList);
+        }
         getActivity().startService(intent);
     }
 

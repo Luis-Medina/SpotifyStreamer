@@ -8,9 +8,9 @@
 
     <dimen name="player_button_size">55dp</dimen>
 
-    <dimen name="player_artist_textview_size">26sp</dimen>
-    <dimen name="player_track_textview_size">22sp</dimen>
-    <dimen name="player_album_textview_size">18sp</dimen>
+    <dimen name="player_artist_textview_size">18sp</dimen>
+    <dimen name="player_track_textview_size">16sp</dimen>
+    <dimen name="player_album_textview_size">14sp</dimen>
     <dimen name="player_time_textview_size">14sp</dimen>
 
 </resources>

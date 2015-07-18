@@ -24,6 +24,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v7.app.NotificationCompat;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.widget.Toast;
 
@@ -48,6 +49,7 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
     public static final String PARAM_SHOW_PLAYER_DIALOG = "showPlayerDialog";
     public static final String PARAM_CURRENT_TRACK_POSITION = "currentTrackPosition";
     public static final String PARAM_TRACK_LIST = "trackList";
+    public static final String PARAM_CURRENT_TRACK = "currentTrack";
     private static final String LOG_TAG = PlayerService.class.getSimpleName();
     private static boolean isStarted;
     // Binder given to clients
@@ -91,6 +93,11 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 //        mServiceLooper = thread.getLooper();
 //        mServiceHandler = new ServiceHandler(mServiceLooper);
 
+        doMediaSessionInit();
+
+    }
+
+    private void doMediaSessionInit() {
         mRemoteControlReceiver = new RemoteControlReceiver();
 
         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0,
@@ -155,6 +162,9 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                                           setIsStarted(false);
                                           mMediaSession.release();
                                           mMediaPlayer.release();
+                                          mMediaSession = null;
+                                          mMediaPlayer = null;
+                                          mCurrentTrack = null;
                                           stopSelf();
                                       }
 
@@ -165,7 +175,6 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
                                   }
         );
-
     }
 
     private void setPlayButton(boolean setToPlay) {
@@ -277,10 +286,14 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
             }
             return;
         } else {
-            if (mMediaPlayer.isPlaying()) {
-                startOrPausePlaying();
+            try {
+                if (mMediaPlayer.isPlaying()) {
+                    startOrPausePlaying();
+                }
+                mMediaPlayer.reset();
+            } catch (IllegalStateException e) {
+                Log.e(LOG_TAG, e.getMessage());
             }
-            mMediaPlayer.reset();
         }
         mCurrentTrack = selectedTrack;
         if (tracks != null && fromUI) {
@@ -376,16 +389,17 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
                 .setSmallIcon(R.drawable.notification)
                 .setContentTitle(mCurrentTrack.name)
                 .setContentText(mCurrentTrack.getArtistName())
-                .setContentIntent(generateEnterIntent())
+                .setContentIntent(generateEnterIntent());
                         //.setLargeIcon(null)
-                .addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", ACTION_PREVIOUS))
-                .addAction(action)
-                .addAction(generateAction(android.R.drawable.ic_media_next, "Next", ACTION_NEXT))
-                .addAction(generateAction(android.R.drawable.ic_delete, "Stop", ACTION_STOP));
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         if (prefs.getBoolean(getString(R.string.pref_notifications_key), true)) {
+            builder.addAction(generateAction(android.R.drawable.ic_media_previous, "Previous", ACTION_PREVIOUS))
+                    .addAction(action)
+                    .addAction(generateAction(android.R.drawable.ic_media_next, "Next", ACTION_NEXT))
+                    .addAction(generateAction(android.R.drawable.ic_delete, "Stop", ACTION_STOP));
+
             builder.setStyle(new NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
+                    .setShowActionsInCompactView(0, 1, 2, 3)
                     .setMediaSession(mMediaSession.getSessionToken()));
         }
 
@@ -443,6 +457,10 @@ public class PlayerService extends Service implements MediaSessionCompat.OnActiv
 
         mServiceID = startId;
         if (!isStarted()) {
+            doMediaSessionInit();
+            ArrayList<ParcelableTrack> tracks = intent.getParcelableArrayListExtra(PARAM_TRACK_LIST);
+            ParcelableTrack track = intent.getParcelableExtra(PARAM_CURRENT_TRACK);
+            if (track != null) initMediaPlayer(track, true, tracks);
             startForeground(1, buildNotification(generateAction(android.R.drawable.ic_media_pause, "Pause", ACTION_PAUSE)));
             setIsStarted(true);
         }
